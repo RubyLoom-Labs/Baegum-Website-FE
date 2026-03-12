@@ -1,78 +1,333 @@
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from "react";
 
-export default function Header() {
-  const [isOpen, setIsOpen] = useState(false)
+// ─────────────────────────────────────────────────────────────────────────────
+// ASSET CONFIG — update paths to match your actual files
+// ─────────────────────────────────────────────────────────────────────────────
+
+import logoSrc         from "@/assets/logo/logo-nav.svg";
+
+import searchDefault   from "@/assets/icons/search.svg";
+import searchHover     from "@/assets/icons/search.svg";
+
+import wishlistDefault from "@/assets/icons/wishlist.svg";
+import wishlistHover   from "@/assets/icons/wishlist.svg";
+
+import cartDefault     from "@/assets/icons/cart.svg";
+import cartHover       from "@/assets/icons/cart.svg";
+
+import userDefault     from "@/assets/icons/user.svg";
+import userHover       from "@/assets/icons/user.svg";
+
+import menuDefault     from "@/assets/icons/menu.svg";
+import menuHover       from "@/assets/icons/menu.svg";
+
+import closeDefault    from "@/assets/icons/close.svg";
+import closeHover      from "@/assets/icons/close.svg";
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+const NAV_LINKS = [
+  { label: "Clothing",     href: "#" },
+  { label: "Makeup",       href: "#" },
+  { label: "Fragrance",    href: "#" },
+  { label: "Bath & Body",  href: "#" },
+  { label: "Skincare",     href: "#" },
+  { label: "Brands",       href: "#" },
+  { label: "Best Sellers", href: "#" },
+];
+
+// ── IconButton ────────────────────────────────────────────────────────────────
+
+function IconButton({ defaultSrc, hoverSrc, size = 20, className = "", badge, onClick, ariaLabel }) {
+  const [hovered, setHovered] = useState(false);
 
   return (
-    <header className="bg-dark text-white shadow-lg sticky top-0 z-50">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold text-primary hover:text-secondary transition">
-            Baegum
-          </Link>
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={()    => setHovered(true)}
+      onBlur={()     => setHovered(false)}
+      className={`relative flex items-center justify-center p-1 ${className}`}
+      aria-label={ariaLabel}
+    >
+      <span className="relative block flex-shrink-0" style={{ width: size, height: size }}>
+        <img
+          src={defaultSrc}
+          width={size} height={size}
+          alt="" draggable={false}
+          style={{ position: "absolute", inset: 0, opacity: hovered ? 0 : 1, transition: "opacity 0.15s ease" }}
+        />
+        <img
+          src={hoverSrc}
+          width={size} height={size}
+          alt="" draggable={false}
+          style={{ position: "absolute", inset: 0, opacity: hovered ? 1 : 0, transition: "opacity 0.15s ease" }}
+        />
+      </span>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex gap-8">
-            <Link
-              to="/"
-              className="hover:text-primary transition duration-300"
-            >
-              Home
-            </Link>
-            <Link
-              to="/about"
-              className="hover:text-primary transition duration-300"
-            >
-              About
-            </Link>
-            <a
-              href="#contact"
-              className="hover:text-primary transition duration-300"
-            >
-              Contact
-            </a>
+      {badge !== undefined && (
+        <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#1a1a1a] text-white text-[9px] rounded-full flex items-center justify-center font-semibold px-0.5 pointer-events-none">
+          {badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// ── Logo ─────────────────────────────────────────────────────────────────────
+
+function Logo({ height = 22, className = "" }) {
+  return (
+    <img
+      src={logoSrc}
+      alt="BAEGUM"
+      height={height}
+      style={{ height, width: "auto", display: "block" }}
+      className={`select-none ${className}`}
+      draggable={false}
+    />
+  );
+}
+
+// ── Shared Mobile Top Bar ─────────────────────────────────────────────────────
+// Used by default bar, menu panel, and search panel — keeps layout consistent.
+//
+//  leftSlot   — what to render on the left  (icons or just spacing)
+//  rightSlot  — what to render on the right (icons or just spacing)
+
+function MobileTopBar({ leftSlot, rightSlot, headerShadow }) {
+  return (
+    <div className={`flex items-center justify-between px-4 py-8 h-14 bg-white ${headerShadow}`}>
+      {/* Left slot — fixed width so logo always centres */}
+      <div className="flex items-center gap-3 w-16">
+        {leftSlot}
+      </div>
+
+      {/* Logo — always centred */}
+      <Logo height={19} />
+
+      {/* Right slot — fixed width, right-aligned */}
+      <div className="flex items-center justify-end gap-3 w-16">
+        {rightSlot}
+      </div>
+    </div>
+  );
+}
+
+// ── Header ───────────────────────────────────────────────────────────────────
+
+export default function Header() {
+  const [menuOpen,    setMenuOpen]    = useState(false);
+  const [searchOpen,  setSearchOpen]  = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [scrolled,    setScrolled]    = useState(false);
+
+  const mobileSearchRef = useRef(null);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (searchOpen) setTimeout(() => mobileSearchRef.current?.focus(), 80);
+  }, [searchOpen]);
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen || searchOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [menuOpen, searchOpen]);
+
+  const closeAll = () => {
+    setMenuOpen(false);
+    setSearchOpen(false);
+    setSearchQuery("");
+  };
+
+  const headerShadow = scrolled
+    ? "shadow-[0_1px_12px_rgba(0,0,0,0.08)]"
+    : "border-b border-gray-100";
+
+  return (
+    <>
+      {/* ════════════════════════════════════════
+          DESKTOP HEADER
+      ════════════════════════════════════════ */}
+      <header className={`hidden md:block sticky top-0 z-50 bg-white transition-shadow duration-300 ${headerShadow}`}>
+
+        {/* Top row */}
+        <div className="max-w-screen-xl mx-auto px-6 flex items-center justify-between h-14 relative">
+
+          {/* Search bar */}
+          <div className="flex items-center gap-2 border border-gray-100 bg-gray-100 rounded-md px-3 py-1.5 w-52 hover:border-gray-400 transition-colors cursor-text">
+            <img src={searchDefault} width={15} height={15} alt="" />
+            <input
+              type="text"
+              placeholder="Search....."
+              className="text-xs text-gray-500 bg-transparent outline-none w-full placeholder-gray-400 font-light"
+            />
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden flex flex-col gap-1"
-            onClick={() => setIsOpen(!isOpen)}
-            aria-label="Toggle menu"
-          >
-            <span className="w-6 h-0.5 bg-white"></span>
-            <span className="w-6 h-0.5 bg-white"></span>
-            <span className="w-6 h-0.5 bg-white"></span>
-          </button>
+          {/* Logo — centred */}
+          <div className="absolute left-1/2 -translate-x-1/2">
+            <Logo height={22} />
+          </div>
+
+          {/* Right icons */}
+          <div className="flex items-center gap-2">
+            <IconButton defaultSrc={userDefault}    hoverSrc={userHover}    size={19} ariaLabel="Account" />
+            <IconButton defaultSrc={wishlistDefault} hoverSrc={wishlistHover} size={19} ariaLabel="Wishlist" />
+            <IconButton defaultSrc={cartDefault}     hoverSrc={cartHover}     size={19} ariaLabel="Cart" badge={0} />
+          </div>
         </div>
 
-        {/* Mobile Navigation */}
-        {isOpen && (
-          <div className="md:hidden mt-4 flex flex-col gap-4 pb-4">
-            <Link
-              to="/"
-              className="hover:text-primary transition duration-300"
-              onClick={() => setIsOpen(false)}
-            >
-              Home
-            </Link>
-            <Link
-              to="/about"
-              className="hover:text-primary transition duration-300"
-              onClick={() => setIsOpen(false)}
-            >
-              About
-            </Link>
-            <a
-              href="#contact"
-              className="hover:text-primary transition duration-300"
-              onClick={() => setIsOpen(false)}
-            >
-              Contact
-            </a>
+        {/* Nav row */}
+        <nav className="border-t border-gray-300">
+          <ul className="max-w-screen-xl mx-auto px-6 flex items-center justify-center gap-8 h-14">
+            {NAV_LINKS.map((link) => (
+              <li key={link.label}>
+                <a
+                  href={link.href}
+                  className="text-[13px] text-gray-700 hover:text-black transition-colors tracking-wide font-normal relative group whitespace-nowrap"
+                >
+                  {link.label}
+                  <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-black transition-all duration-300 group-hover:w-full" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </header>
+
+      {/* ════════════════════════════════════════
+          MOBILE — DEFAULT BAR
+          Hidden when menu or search is open
+      ════════════════════════════════════════ */}
+      <header
+        className={`md:hidden sticky top-0 z-50 transition-shadow duration-300 ${headerShadow} ${
+          menuOpen || searchOpen ? "invisible" : "visible"
+        }`}
+      >
+        <MobileTopBar
+          headerShadow=""
+          leftSlot={
+            <>
+              <IconButton
+                defaultSrc={menuDefault} hoverSrc={menuHover}
+                size={22} ariaLabel="Open menu"
+                onClick={() => { setSearchOpen(false); setMenuOpen(true); }}
+              />
+              <IconButton
+                defaultSrc={searchDefault} hoverSrc={searchHover}
+                size={19} ariaLabel="Search"
+                onClick={() => { setMenuOpen(false); setSearchOpen(true); }}
+              />
+            </>
+          }
+          rightSlot={
+            <>
+              <IconButton defaultSrc={wishlistDefault} hoverSrc={wishlistHover} size={20} ariaLabel="Wishlist" />
+              <IconButton defaultSrc={cartDefault}     hoverSrc={cartHover}     size={20} ariaLabel="Cart" badge={0} />
+            </>
+          }
+        />
+      </header>
+
+      {/* ════════════════════════════════════════
+          MOBILE — MENU FULL SCREEN OVERLAY
+      ════════════════════════════════════════ */}
+      <div
+        className={`md:hidden fixed inset-0 z-50 bg-white flex flex-col transition-transform duration-300 ease-out ${
+          menuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Same top bar layout — nothing left, close button right */}
+        <MobileTopBar
+          headerShadow="border-b border-gray-100"
+          leftSlot={null}
+          rightSlot={
+            <IconButton
+              defaultSrc={closeDefault} hoverSrc={closeHover}
+              size={20} ariaLabel="Close menu"
+              onClick={closeAll}
+            />
+          }
+        />
+
+        {/* Nav links */}
+        <nav className="flex-1 overflow-y-auto py-4">
+          <ul>
+            {NAV_LINKS.map((link) => (
+              <li key={link.label}>
+                <a
+                  href={link.href}
+                  onClick={closeAll}
+                  className="block px-6 py-2 text-[14px] text-gray-800 hover:bg-gray-50 transition-colors font-light tracking-wide border-b border-gray-50"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Profile button */}
+        <div className="p-5 border-t border-gray-100">
+          <button className="w-full py-3 border-gray-200 bg-gray-200 rounded-md hover:bg-gray-200 transition-colors text-sm text-gray-700 font-medium tracking-wide">
+            Your Profile
+          </button>
+        </div>
+      </div>
+
+      {/* ════════════════════════════════════════
+          MOBILE — SEARCH FULL SCREEN OVERLAY
+      ════════════════════════════════════════ */}
+      <div
+        className={`md:hidden fixed inset-0 z-50 bg-white flex flex-col transition-opacity duration-200 ${
+          searchOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        {/* Same top bar — close button right, nothing left */}
+        <MobileTopBar
+          headerShadow="border-b border-gray-100"
+          leftSlot={null}
+          rightSlot={
+            <IconButton
+              defaultSrc={closeDefault} hoverSrc={closeHover}
+              size={20} ariaLabel="Close search"
+              onClick={closeAll}
+            />
+          }
+        />
+
+        {/* Search input */}
+        <div className="px-4 pt-4">
+          <div className="flex items-center border border-gray-100 bg-gray-100 rounded-lg px-3 py-2.5 gap-2">
+            <img src={searchDefault} width={16} height={16} alt="" />
+            <input
+              ref={mobileSearchRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Type here"
+              className="flex-1 text-sm text-gray-700 bg-transparent outline-none placeholder-gray-400 font-light"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} aria-label="Clear">
+                <img src={closeDefault} width={14} height={14} alt="" />
+              </button>
+            )}
           </div>
-        )}
-      </nav>
-    </header>
-  )
+        </div>
+
+        {/* Empty state */}
+        <div className="flex-1 flex items-start justify-center pt-12 text-gray-300 text-sm">
+          {!searchQuery && <span>Start typing to search...</span>}
+        </div>
+      </div>
+    </>
+  );
 }
