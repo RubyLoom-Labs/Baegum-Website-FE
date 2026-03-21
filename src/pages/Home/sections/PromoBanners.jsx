@@ -2,9 +2,6 @@ import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 🗂️  ASSET CONFIG
-//  Add your promo banner images in: src/assets/banners/promo/
-//  Each image should already contain all text/content — 1:1 square ratio
 // ─────────────────────────────────────────────────────────────────────────────
 
 import promoBg1 from "@/assets/banners/promo/cream-set.png";

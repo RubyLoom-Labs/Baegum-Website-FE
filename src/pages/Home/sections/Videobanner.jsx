@@ -1,11 +1,4 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// 🗂️  ASSET CONFIG
-//
-//  Set USE_VIDEO to true when you have a video file ready.
-//  Set USE_VIDEO to false to show the fallback image instead.
-//
-//  Video:  src/assets/banners/video-banner.mp4
-//  Image:  src/assets/banners/video-banner.jpg  (fallback / placeholder)
 // ─────────────────────────────────────────────────────────────────────────────
 
 import bannerImage from "@/assets/banners/video-banner.png";

@@ -1,15 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ASSET CONFIG
-//
-//  Add your banner images in:  src/assets/banners/
-//
-//  Each slide has:
-//    desktop  — shown on md+ screens  (landscape, full width)
-//    mobile   — shown on small screens (portrait / square crop)
-//
-//  To add / remove slides just edit the SLIDES array below.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import slide1Desktop from "@/assets/banners/slide1-desktop.png";

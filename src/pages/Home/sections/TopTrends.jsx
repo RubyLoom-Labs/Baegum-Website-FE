@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 🗂️  ASSET CONFIG
 // ─────────────────────────────────────────────────────────────────────────────
 
 import iconShorts    from "@/assets/icons/trends/shorts.svg";
