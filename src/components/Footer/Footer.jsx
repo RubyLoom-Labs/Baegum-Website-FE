@@ -102,7 +102,7 @@ export default function Footer() {
     <footer className="bg-white border-t border-gray-100">
 
       {/* ── Service Strip ───────────────────────────────────────────── */}
-      <div className="border-b border-gray-100">
+      <div className="border-b border-gray-200">
         <div className="max-w-screen-xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white ">
             <ServiceCard

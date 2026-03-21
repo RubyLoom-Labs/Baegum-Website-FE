@@ -185,7 +185,7 @@ export default function Header() {
         </div>
 
         {/* Nav row */}
-        <nav className="border-t border-gray-100">
+        <nav className="border-y border-gray-200">
           <ul className="max-w-screen-xl mx-auto px-6 flex items-center justify-center gap-8 h-14">
             {NAV_LINKS.map((link) => (
               <li key={link.label}>
