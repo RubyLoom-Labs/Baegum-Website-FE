@@ -1,6 +1,9 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef } from "react";
 
+import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ASSET CONFIG — update paths to match your actual files
 // ─────────────────────────────────────────────────────────────────────────────
@@ -127,6 +130,9 @@ export default function Header() {
   const mobileSearchRef = useRef(null);
   const location = useLocation();
 
+  const { openCart, count: cartCount } = useCart();
+  const { openWishlist } = useWishlist();
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -180,8 +186,8 @@ export default function Header() {
           {/* Right icons */}
           <div className="flex items-center gap-2">
             <IconButton defaultSrc={userDefault}    hoverSrc={userHover}    size={19} ariaLabel="Account" />
-            <IconButton defaultSrc={wishlistDefault} hoverSrc={wishlistHover} size={19} ariaLabel="Wishlist" />
-            <IconButton defaultSrc={cartDefault}     hoverSrc={cartHover}     size={19} ariaLabel="Cart" badge={0} />
+            <IconButton defaultSrc={wishlistDefault} hoverSrc={wishlistHover} size={19} ariaLabel="Wishlist" onClick={openWishlist} />
+            <IconButton defaultSrc={cartDefault}     hoverSrc={cartHover}     size={19} ariaLabel="Cart" badge={cartCount} onClick={openCart} />
           </div>
         </div>
 
@@ -245,8 +251,8 @@ export default function Header() {
           }
           rightSlot={
             <>
-              <IconButton defaultSrc={wishlistDefault} hoverSrc={wishlistHover} size={20} ariaLabel="Wishlist" />
-              <IconButton defaultSrc={cartDefault}     hoverSrc={cartHover}     size={20} ariaLabel="Cart" badge={0} />
+              <IconButton defaultSrc={wishlistDefault} hoverSrc={wishlistHover} size={20} ariaLabel="Wishlist" onClick={openWishlist} />
+              <IconButton defaultSrc={cartDefault}     hoverSrc={cartHover}     size={20} ariaLabel="Cart" badge={cartCount} onClick={openCart} />
             </>
           }
         />
@@ -259,6 +265,7 @@ export default function Header() {
         className={`md:hidden fixed inset-0 z-50 bg-white flex flex-col transition-transform duration-300 ease-out ${
           menuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
+        style={{ zIndex: 53 }}
       >
         {/* Same top bar layout — nothing left, close button right */}
         <MobileTopBar
@@ -309,6 +316,7 @@ export default function Header() {
         className={`md:hidden fixed inset-0 z-50 bg-white flex flex-col transition-opacity duration-200 ${
           searchOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
+        style={{ zIndex: 53 }}
       >
         {/* Same top bar — close button right, nothing left */}
         <MobileTopBar
