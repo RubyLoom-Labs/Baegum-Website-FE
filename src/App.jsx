@@ -1,11 +1,13 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { CartProvider } from "@/context/CartContext"
 import { WishlistProvider } from "@/context/WishlistContext"
+import { AuthProvider } from "@/context/AuthContext";
 
 import Header from './components/Header/Header'
 import Footer from './components/Footer/Footer'
 import CartDrawer from "@/components/Cart/CartDrawer"
 import WishlistDrawer from "@/components/Wishlist/WishlistDrawer"
+import AuthModal from "@/components/Auth/AuthModal";
 
 import Home from './pages/Home/Home'
 import About from './pages/About/About'
@@ -16,25 +18,28 @@ import CategoryPage from "./pages/Category/CategoryPage"
 function App() {
   return (
     <Router>
-      <CartProvider>              {/* ← wrap everything */}
-        <WishlistProvider>        {/* ← wrap everything */}
-          <div className="flex flex-col min-h-screen bg-light">
-            <Header />
-            <main className="flex-grow">
-              <Routes>
-                <Route path="/"         element={<Home />} />
-                <Route path="/about"    element={<About />} />
-                <Route path="/clothing" element={<ClothingPage />} />
-                <Route path="/:category" element={<CategoryPage />} />
-                <Route path="/not-found"         element={<NotFound />} />
-              </Routes>
-            </main>
-            <Footer />
-            <CartDrawer />        {/* ← outside Routes */}
-            <WishlistDrawer />    {/* ← outside Routes */}
-          </div>
-        </WishlistProvider>
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          <WishlistProvider>
+            <div className="flex flex-col min-h-screen bg-light">
+              <Header />
+              <main className="flex-grow">
+                <Routes>
+                  <Route path="/"          element={<Home />} />
+                  <Route path="/about"     element={<About />} />
+                  <Route path="/clothing"  element={<ClothingPage />} />
+                  <Route path="/:category" element={<CategoryPage />} />
+                  <Route path="*"          element={<NotFound />} />  {/* ← * not /not-found */}
+                </Routes>
+              </main>
+              <Footer />
+              <CartDrawer />
+              <WishlistDrawer />
+              <AuthModal />        {/* ← move here, inside all providers */}
+            </div>
+          </WishlistProvider>
+        </CartProvider>
+      </AuthProvider>
     </Router>
   )
 }

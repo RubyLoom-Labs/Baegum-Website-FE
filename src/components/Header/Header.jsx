@@ -4,39 +4,41 @@ import { useState, useEffect, useRef } from "react";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 
+import { useAuth } from "@/context/AuthContext";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ASSET CONFIG — update paths to match your actual files
 // ─────────────────────────────────────────────────────────────────────────────
 
-import logoSrc         from "@/assets/logo/logo-nav.svg";
+import logoSrc from "@/assets/logo/logo-nav.svg";
 
-import searchDefault   from "@/assets/icons/search.svg";
-import searchHover     from "@/assets/icons/search.svg";
+import searchDefault from "@/assets/icons/search.svg";
+import searchHover from "@/assets/icons/search.svg";
 
 import wishlistDefault from "@/assets/icons/wishlist.svg";
-import wishlistHover   from "@/assets/icons/wishlist.svg";
+import wishlistHover from "@/assets/icons/wishlist.svg";
 
-import cartDefault     from "@/assets/icons/cart.svg";
-import cartHover       from "@/assets/icons/cart.svg";
+import cartDefault from "@/assets/icons/cart.svg";
+import cartHover from "@/assets/icons/cart.svg";
 
-import userDefault     from "@/assets/icons/user.svg";
-import userHover       from "@/assets/icons/user.svg";
+import userDefault from "@/assets/icons/user.svg";
+import userHover from "@/assets/icons/user.svg";
 
-import menuDefault     from "@/assets/icons/menu.svg";
-import menuHover       from "@/assets/icons/menu.svg";
+import menuDefault from "@/assets/icons/menu.svg";
+import menuHover from "@/assets/icons/menu.svg";
 
-import closeDefault    from "@/assets/icons/close.svg";
-import closeHover      from "@/assets/icons/close.svg";
+import closeDefault from "@/assets/icons/close.svg";
+import closeHover from "@/assets/icons/close.svg";
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 const NAV_LINKS = [
-  { label: "Clothing",     href: "/clothing"     },
-  { label: "Makeup",       href: "/makeup"       },
-  { label: "Fragrance",    href: "/fragrance"    },
-  { label: "Bath & Body",  href: "/bath-body"    },
-  { label: "Skincare",     href: "/skincare"     },
-  { label: "Brands",       href: "/brands"       },
+  { label: "Clothing", href: "/clothing" },
+  { label: "Makeup", href: "/makeup" },
+  { label: "Fragrance", href: "/fragrance" },
+  { label: "Bath & Body", href: "/bath-body" },
+  { label: "Skincare", href: "/skincare" },
+  { label: "Brands", href: "/brands" },
   { label: "Best Sellers", href: "/best-sellers" },
 ];
 
@@ -50,8 +52,8 @@ function IconButton({ defaultSrc, hoverSrc, size = 20, className = "", badge, on
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onFocus={()    => setHovered(true)}
-      onBlur={()     => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
       className={`relative flex items-center justify-center p-1 ${className}`}
       aria-label={ariaLabel}
     >
@@ -122,16 +124,17 @@ function MobileTopBar({ leftSlot, rightSlot, headerShadow }) {
 // ── Header ───────────────────────────────────────────────────────────────────
 
 export default function Header() {
-  const [menuOpen,    setMenuOpen]    = useState(false);
-  const [searchOpen,  setSearchOpen]  = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [scrolled,    setScrolled]    = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   const mobileSearchRef = useRef(null);
   const location = useLocation();
 
   const { openCart, count: cartCount } = useCart();
   const { openWishlist } = useWishlist();
+  const { openLogin } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
@@ -185,9 +188,9 @@ export default function Header() {
 
           {/* Right icons */}
           <div className="flex items-center gap-2">
-            <IconButton defaultSrc={userDefault}    hoverSrc={userHover}    size={19} ariaLabel="Account" />
+            <IconButton defaultSrc={userDefault} hoverSrc={userHover} size={19} ariaLabel="Account" onClick={openLogin} />
             <IconButton defaultSrc={wishlistDefault} hoverSrc={wishlistHover} size={19} ariaLabel="Wishlist" onClick={openWishlist} />
-            <IconButton defaultSrc={cartDefault}     hoverSrc={cartHover}     size={19} ariaLabel="Cart" badge={cartCount} onClick={openCart} />
+            <IconButton defaultSrc={cartDefault} hoverSrc={cartHover} size={19} ariaLabel="Cart" badge={cartCount} onClick={openCart} />
           </div>
         </div>
 
@@ -208,7 +211,7 @@ export default function Header() {
                     <span
                       className="absolute -bottom-0.5 left-0 h-px transition-all duration-300"
                       style={{
-                        width:           isActive ? "100%" : "0%",
+                        width: isActive ? "100%" : "0%",
                         backgroundColor: "#FF8989",
                       }}
                     />
@@ -229,9 +232,8 @@ export default function Header() {
           Hidden when menu or search is open
       ════════════════════════════════════════ */}
       <header
-        className={`md:hidden sticky top-0 z-50 transition-shadow duration-300 ${headerShadow} ${
-          menuOpen || searchOpen ? "invisible" : "visible"
-        }`}
+        className={`md:hidden sticky top-0 z-50 transition-shadow duration-300 ${headerShadow} ${menuOpen || searchOpen ? "invisible" : "visible"
+          }`}
       >
         <MobileTopBar
           headerShadow=""
@@ -252,7 +254,7 @@ export default function Header() {
           rightSlot={
             <>
               <IconButton defaultSrc={wishlistDefault} hoverSrc={wishlistHover} size={20} ariaLabel="Wishlist" onClick={openWishlist} />
-              <IconButton defaultSrc={cartDefault}     hoverSrc={cartHover}     size={20} ariaLabel="Cart" badge={cartCount} onClick={openCart} />
+              <IconButton defaultSrc={cartDefault} hoverSrc={cartHover} size={20} ariaLabel="Cart" badge={cartCount} onClick={openCart} />
             </>
           }
         />
@@ -262,9 +264,8 @@ export default function Header() {
           MOBILE — MENU FULL SCREEN OVERLAY
       ════════════════════════════════════════ */}
       <div
-        className={`md:hidden fixed inset-0 z-50 bg-white flex flex-col transition-transform duration-300 ease-out ${
-          menuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`md:hidden fixed inset-0 z-50 bg-white flex flex-col transition-transform duration-300 ease-out ${menuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
         style={{ zIndex: 53 }}
       >
         {/* Same top bar layout — nothing left, close button right */}
@@ -303,7 +304,12 @@ export default function Header() {
 
         {/* Profile button */}
         <div className="p-5 border-t border-gray-100">
-          <button className="w-full py-3 border-gray-200 bg-gray-200 rounded-md hover:bg-gray-200 transition-colors text-sm text-gray-700 font-medium tracking-wide">
+          <button
+            onClick={openLogin}
+            className="w-full py-3 border border-gray-200 bg-gray-100 rounded-md
+               hover:bg-gray-200 transition-colors text-sm text-gray-700
+               font-medium tracking-wide"
+          >
             Your Profile
           </button>
         </div>
@@ -313,9 +319,8 @@ export default function Header() {
           MOBILE — SEARCH FULL SCREEN OVERLAY
       ════════════════════════════════════════ */}
       <div
-        className={`md:hidden fixed inset-0 z-50 bg-white flex flex-col transition-opacity duration-200 ${
-          searchOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
+        className={`md:hidden fixed inset-0 z-50 bg-white flex flex-col transition-opacity duration-200 ${searchOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
         style={{ zIndex: 53 }}
       >
         {/* Same top bar — close button right, nothing left */}
@@ -333,7 +338,7 @@ export default function Header() {
 
         {/* Search input */}
         <div className="px-4 pt-4">
-          <div className="flex items-center border border-gray-100 bg-gray-100 rounded-lg px-3 py-2.5 gap-2">
+          <div className="flex items-center border border-gray-100 bg-gray-100 rounded px-3 py-2.5 gap-2">
             <img src={searchDefault} width={16} height={16} alt="" />
             <input
               ref={mobileSearchRef}
