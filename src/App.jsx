@@ -5,6 +5,9 @@ import Home from './pages/Home/Home'
 import About from './pages/About/About'
 import NotFound from './pages/NotFound'
 
+import ClothingPage from "./pages/Clothing/ClothingPage";
+import CategoryPage from "./pages/Category/CategoryPage";
+
 function App() {
   return (
     <Router>
@@ -15,6 +18,10 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="*" element={<NotFound />} />
+
+            <Route path="/clothing" element={<ClothingPage />} /> 
+            <Route path="/:category" element={<CategoryPage />} />
+            
           </Routes>
         </main>
         <Footer />

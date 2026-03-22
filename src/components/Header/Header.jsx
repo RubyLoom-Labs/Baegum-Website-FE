@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef } from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -28,13 +28,13 @@ import closeHover      from "@/assets/icons/close.svg";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const NAV_LINKS = [
-  { label: "Clothing",     href: "#" },
-  { label: "Makeup",       href: "#" },
-  { label: "Fragrance",    href: "#" },
-  { label: "Bath & Body",  href: "#" },
-  { label: "Skincare",     href: "#" },
-  { label: "Brands",       href: "#" },
-  { label: "Best Sellers", href: "#" },
+  { label: "Clothing",     href: "/clothing"     },
+  { label: "Makeup",       href: "/makeup"       },
+  { label: "Fragrance",    href: "/fragrance"    },
+  { label: "Bath & Body",  href: "/bath-body"    },
+  { label: "Skincare",     href: "/skincare"     },
+  { label: "Brands",       href: "/brands"       },
+  { label: "Best Sellers", href: "/best-sellers" },
 ];
 
 // ── IconButton ────────────────────────────────────────────────────────────────
@@ -125,6 +125,7 @@ export default function Header() {
   const [scrolled,    setScrolled]    = useState(false);
 
   const mobileSearchRef = useRef(null);
+  const location = useLocation();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
@@ -187,17 +188,32 @@ export default function Header() {
         {/* Nav row */}
         <nav className="border-y border-gray-200">
           <ul className="max-w-screen-xl mx-auto px-6 flex items-center justify-center gap-8 h-14">
-            {NAV_LINKS.map((link) => (
-              <li key={link.label}>
-                <a
-                  href={link.href}
-                  className="text-[13px] text-gray-700 hover:text-black transition-colors tracking-wide font-normal relative group whitespace-nowrap"
-                >
-                  {link.label}
-                  <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-black transition-all duration-300 group-hover:w-full" />
-                </a>
-              </li>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const isActive = location.pathname === link.href;
+              return (
+                <li key={link.label}>
+                  <Link
+                    to={link.href}
+                    className="text-[13px] tracking-wide font-normal relative group whitespace-nowrap transition-colors"
+                    style={{ color: isActive ? "#FF8989" : "#374151" }}
+                  >
+                    {link.label}
+                    {/* Underline — always visible when active, animates on hover */}
+                    <span
+                      className="absolute -bottom-0.5 left-0 h-px transition-all duration-300"
+                      style={{
+                        width:           isActive ? "100%" : "0%",
+                        backgroundColor: "#FF8989",
+                      }}
+                    />
+                    {/* Hover underline — only shows when not active */}
+                    {!isActive && (
+                      <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-black transition-all duration-300 group-hover:w-full" />
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
       </header>
@@ -260,17 +276,21 @@ export default function Header() {
         {/* Nav links */}
         <nav className="flex-1 overflow-y-auto py-4">
           <ul>
-            {NAV_LINKS.map((link) => (
-              <li key={link.label}>
-                <a
-                  href={link.href}
-                  onClick={closeAll}
-                  className="block px-6 py-2 text-[14px] text-gray-800 hover:bg-gray-50 transition-colors font-light tracking-wide border-b border-gray-50"
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const isActive = location.pathname === link.href;
+              return (
+                <li key={link.label}>
+                  <Link
+                    to={link.href}
+                    onClick={closeAll}
+                    className="block px-6 py-2 text-[14px] transition-colors font-light tracking-wide border-b border-gray-50"
+                    style={{ color: isActive ? "#FF8989" : "#1f2937" }}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 
