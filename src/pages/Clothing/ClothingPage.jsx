@@ -15,7 +15,7 @@ import p7 from "@/assets/products/clothing/p1.png";
 import p8 from "@/assets/products/clothing/p1.png";
 
 const PRODUCTS = [
-  { id: 1,  image: p1, name: "Oatmeal V-Neck Dress",  description: "Sleeveless, fitted beige dress with a V-neck.", price: "Rs.0000.00", href: "#" },
+  { id: 1,  image: p1, name: "Oatmeal V-Neck Dress",  description: "Sleeveless, fitted beige dress with a V-neck.", price: "Rs.0000.00", href: "/products/clothing/1" },
   { id: 2,  image: p2, name: "Oatmeal V-Neck Dress",  description: "Sleeveless, fitted beige dress with a V-neck.", price: "Rs.0000.00", href: "#" },
   { id: 3,  image: p3, name: "Oatmeal V-Neck Dress",  description: "Sleeveless, fitted beige dress with a V-neck.", price: "Rs.0000.00", href: "#" },
   { id: 4,  image: p4, name: "Oatmeal V-Neck Dress",  description: "Sleeveless, fitted beige dress with a V-neck.", price: "Rs.0000.00", href: "#" },

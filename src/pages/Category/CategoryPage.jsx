@@ -42,7 +42,7 @@ import bs3 from "@/assets/products/skincare/p1.png";
 
 const PRODUCTS_BY_CATEGORY = {
   fragrance: [
-    { id: 1, image: frag1, name: "Velora Eau de Parfum",    price: "Rs. 3,450.00", href: "#" },
+    { id: 1, image: frag1, name: "Velora Eau de Parfum",    price: "Rs. 3,450.00", href: "/products/fragrance/2" },
     { id: 2, image: frag2, name: "Luxe Floral Mist",        price: "Rs. 1,850.00", href: "#" },
     { id: 3, image: frag3, name: "BAEGUM Signature Scent",  price: "Rs. 4,200.00", href: "#" },
     { id: 4, image: frag1, name: "Velora Eau de Parfum",    price: "Rs. 3,450.00", href: "#" },

@@ -14,6 +14,7 @@ import About from './pages/About/About'
 import NotFound from './pages/NotFound'
 import ClothingPage from "./pages/Clothing/ClothingPage"
 import CategoryPage from "./pages/Category/CategoryPage"
+import ProductPage from "./pages/Product/ProductPage";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
                   <Route path="/about"     element={<About />} />
                   <Route path="/clothing"  element={<ClothingPage />} />
                   <Route path="/:category" element={<CategoryPage />} />
+                  <Route path="/products/:category/:id" element={<ProductPage />} />
                   <Route path="*"          element={<NotFound />} />  {/* ← * not /not-found */}
                 </Routes>
               </main>
