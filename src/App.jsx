@@ -5,6 +5,8 @@ import { AuthProvider } from "@/context/AuthContext";
 
 import Header from './components/Header/Header'
 import Footer from './components/Footer/Footer'
+
+import ProfilePage from "./pages/Profile/ProfilePage";
 import CartDrawer from "@/components/Cart/CartDrawer"
 import WishlistDrawer from "@/components/Wishlist/WishlistDrawer"
 import AuthModal from "@/components/Auth/AuthModal";
@@ -32,6 +34,8 @@ function App() {
                   <Route path="/:category" element={<CategoryPage />} />
                   <Route path="/products/:category/:id" element={<ProductPage />} />
                   <Route path="*"          element={<NotFound />} />  {/* ← * not /not-found */}
+                  import ProfilePage from "./pages/Profile/ProfilePage";
+                  <Route path="/profile" element={<ProfilePage />} />
                 </Routes>
               </main>
               <Footer />
