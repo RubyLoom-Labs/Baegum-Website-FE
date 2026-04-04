@@ -1,6 +1,7 @@
 import { useCart } from "@/context/CartContext";
 import { Link } from "react-router-dom";
 
+
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const CloseIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -99,12 +100,12 @@ export default function CartDrawer() {
         onClick={closeCart}
         className="hidden md:block fixed inset-0 transition-all duration-300"
         style={{
-          zIndex:               51,
-          pointerEvents:        cartOpen ? "auto" : "none",
-          opacity:              cartOpen ? 1 : 0,
-          backdropFilter:       cartOpen ? "blur(3px)" : "none",
+          zIndex: 51,
+          pointerEvents: cartOpen ? "auto" : "none",
+          opacity: cartOpen ? 1 : 0,
+          backdropFilter: cartOpen ? "blur(3px)" : "none",
           WebkitBackdropFilter: cartOpen ? "blur(3px)" : "none",
-          backgroundColor:      "rgba(255,255,255,0.40)",
+          backgroundColor: "rgba(255,255,255,0.40)",
         }}
       />
 
@@ -168,16 +169,14 @@ export default function CartDrawer() {
             </span>
           </div>
 
-          <button
-            disabled={isEmpty}
+          <button onClick={() => { closeCart(); navigate('/checkout') }}
             className="w-full py-4 text-[14px] font-medium tracking-wide transition-colors
                        hover:bg-gray-800 active:bg-gray-700 disabled:cursor-not-allowed"
             style={{
               backgroundColor: isEmpty ? "#d1d5db" : "#1a1a1a",
-              color:           isEmpty ? "#9ca3af" : "#ffffff",
-            }}
-          >
-            {isEmpty ? "Checkout LKR --" : `Checkout LKR ${total.toFixed(2)}`}
+              color: isEmpty ? "#9ca3af" : "#ffffff",
+            }}>
+            Checkout LKR {total.toFixed(2)}
           </button>
 
           <p className="text-[11px] text-gray-400 text-right mt-2 font-light">

@@ -27,6 +27,10 @@ import BestSellersPage from './pages/BestSellers/BestSellersPage'
 // Product detail pages
 import ProductPage from './pages/Product/ProductPage'
 
+//Order flow pages
+import CheckoutPage from './pages/Checkout/CheckoutPage'
+import OrderConfirmationPage from './pages/OrderConfirmation/OrderConfirmationPage'
+
 function App() {
   return (
     <Router>
@@ -53,6 +57,10 @@ function App() {
 
                   {/* Product detail — /products/:category/:id */}
                   <Route path="/products/:category/:id" element={<ProductPage />} />
+
+                  {/* Order flow */}
+                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
 
                   {/* 404 */}
                   <Route path="*" element={<NotFound />} />
