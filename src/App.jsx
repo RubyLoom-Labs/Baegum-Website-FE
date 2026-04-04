@@ -1,22 +1,31 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { CartProvider } from "@/context/CartContext"
-import { WishlistProvider } from "@/context/WishlistContext"
-import { AuthProvider } from "@/context/AuthContext";
+import { CartProvider } from '@/context/CartContext'
+import { WishlistProvider } from '@/context/WishlistContext'
+import { AuthProvider } from '@/context/AuthContext'
 
 import Header from './components/Header/Header'
 import Footer from './components/Footer/Footer'
+import CartDrawer from '@/components/Cart/CartDrawer'
+import WishlistDrawer from '@/components/Wishlist/WishlistDrawer'
+import AuthModal from '@/components/Auth/AuthModal'
 
-import ProfilePage from "./pages/Profile/ProfilePage";
-import CartDrawer from "@/components/Cart/CartDrawer"
-import WishlistDrawer from "@/components/Wishlist/WishlistDrawer"
-import AuthModal from "@/components/Auth/AuthModal";
-
+// Pages
 import Home from './pages/Home/Home'
 import About from './pages/About/About'
 import NotFound from './pages/NotFound'
-import ClothingPage from "./pages/Clothing/ClothingPage"
-import CategoryPage from "./pages/Category/CategoryPage"
-import ProductPage from "./pages/Product/ProductPage";
+import ProfilePage from './pages/Profile/ProfilePage'
+
+// Category pages — each in its own folder
+import ClothingPage from './pages/Clothing/ClothingPage'
+import MakeupPage from './pages/Makeup/MakeupPage'
+import FragrancePage from './pages/Fragrance/FragrancePage'
+import BathBodyPage from './pages/BathBody/BathBodyPage'
+import SkincarePage from './pages/Skincare/SkincarePage'
+import BrandsPage from './pages/Brands/BrandsPage'
+import BestSellersPage from './pages/BestSellers/BestSellersPage'
+
+// Product detail pages
+import ProductPage from './pages/Product/ProductPage'
 
 function App() {
   return (
@@ -24,24 +33,35 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <WishlistProvider>
-            <div className="flex flex-col min-h-screen bg-light">
+            <div className="flex flex-col min-h-screen">
               <Header />
               <main className="flex-grow">
                 <Routes>
-                  <Route path="/"          element={<Home />} />
-                  <Route path="/about"     element={<About />} />
-                  <Route path="/clothing"  element={<ClothingPage />} />
-                  <Route path="/:category" element={<CategoryPage />} />
-                  <Route path="/products/:category/:id" element={<ProductPage />} />
-                  <Route path="*"          element={<NotFound />} />  {/* ← * not /not-found */}
-                  import ProfilePage from "./pages/Profile/ProfilePage";
+                  {/* Main */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/about" element={<About />} />
                   <Route path="/profile" element={<ProfilePage />} />
+
+                  {/* Category pages */}
+                  <Route path="/clothing" element={<ClothingPage />} />
+                  <Route path="/makeup" element={<MakeupPage />} />
+                  <Route path="/fragrance" element={<FragrancePage />} />
+                  <Route path="/bath-body" element={<BathBodyPage />} />
+                  <Route path="/skincare" element={<SkincarePage />} />
+                  <Route path="/brands" element={<BrandsPage />} />
+                  <Route path="/best-sellers" element={<BestSellersPage />} />
+
+                  {/* Product detail — /products/:category/:id */}
+                  <Route path="/products/:category/:id" element={<ProductPage />} />
+
+                  {/* 404 */}
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
               <Footer />
               <CartDrawer />
               <WishlistDrawer />
-              <AuthModal />        {/* ← move here, inside all providers */}
+              <AuthModal />
             </div>
           </WishlistProvider>
         </CartProvider>

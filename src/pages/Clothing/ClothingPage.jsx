@@ -1,231 +1,156 @@
 import { useEffect, useState } from 'react'
 import ProductCard from '@/components/ui/ProductCard'
 import FilterSidebar from './components/FilterSidebar'
+import Pagination from '@/components/ui/Pagination'
 import { getProducts } from '@/services/product'
-import p1 from '@/assets/products/clothing/p1.png'
+import placeholder from '@/assets/products/clothing/p1.png'
 
-// ── Format API response to frontend format ──────────────────────────────────
+const ITEMS_PER_PAGE = 16
+
 const formatProduct = (apiProduct) => {
   const variant = apiProduct.product_variants?.[0]
   return {
     id: apiProduct.id,
-    image: apiProduct.image || p1, // Use placeholder if no image
+    image: apiProduct.image || placeholder,
     name: apiProduct.name,
-    description:
-      apiProduct.description ||
-      `${apiProduct.brand?.name} - ${apiProduct.product_category?.name}`, // Fallback description
-    price: variant
-      ? `Rs.${parseFloat(variant.unit_price).toFixed(2)}`
-      : 'Rs.0.00',
+    description: apiProduct.description || `${apiProduct.brand?.name || ''} - ${apiProduct.product_category?.name || ''}`,
+    price: variant ? `Rs.${parseFloat(variant.unit_price).toFixed(2)}` : 'Rs.0.00',
     href: `/products/clothing/${apiProduct.id}`,
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-
-import p2 from '@/assets/products/clothing/p1.png'
-import p3 from '@/assets/products/clothing/p1.png'
-import p4 from '@/assets/products/clothing/p1.png'
-import p5 from '@/assets/products/clothing/p1.png'
-import p6 from '@/assets/products/clothing/p1.png'
-import p7 from '@/assets/products/clothing/p1.png'
-import p8 from '@/assets/products/clothing/p1.png'
-
-/* const PRODUCTS = [
-  { id: 1,  image: p1, name: "Oatmeal V-Neck Dress",  description: "Sleeveless, fitted beige dress with a V-neck.", price: "Rs.0000.00", href: "/products/clothing/1" },
-  { id: 2,  image: p2, name: "Oatmeal V-Neck Dress",  description: "Sleeveless, fitted beige dress with a V-neck.", price: "Rs.0000.00", href: "#" },
-  { id: 3,  image: p3, name: "Oatmeal V-Neck Dress",  description: "Sleeveless, fitted beige dress with a V-neck.", price: "Rs.0000.00", href: "#" },
-  { id: 4,  image: p4, name: "Oatmeal V-Neck Dress",  description: "Sleeveless, fitted beige dress with a V-neck.", price: "Rs.0000.00", href: "#" },
-  { id: 5,  image: p5, name: "Oatmeal V-Neck Dress",  description: "Sleeveless, fitted beige dress with a V-neck.", price: "Rs.0000.00", href: "#" },
-  { id: 6,  image: p6, name: "Oatmeal V-Neck Dress",  description: "Sleeveless, fitted beige dress with a V-neck.", price: "Rs.0000.00", href: "#" },
-  { id: 7,  image: p7, name: "Oatmeal V-Neck Dress",  description: "Sleeveless, fitted beige dress with a V-neck.", price: "Rs.0000.00", href: "#" },
-  { id: 8,  image: p8, name: "Oatmeal V-Neck Dress",  description: "Sleeveless, fitted beige dress with a V-neck.", price: "Rs.0000.00", href: "#" },
-]; */
-
-const TOTAL_PRODUCTS = 123
-
-// ── Filter icon ───────────────────────────────────────────────────────────────
 const FilterIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="4" y1="6" x2="20" y2="6" />
     <line x1="8" y1="12" x2="16" y2="12" />
     <line x1="10" y1="18" x2="14" y2="18" />
   </svg>
 )
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CLOTHING PAGE
-// ─────────────────────────────────────────────────────────────────────────────
-
 export default function ClothingPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [selectedFilters, setSelectedFilters] = useState([])
-  const [PRODUCTS, setProducts] = useState([])
+  const [products, setProducts] = useState([])
+  const [totalProducts, setTotalProducts] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+
+  const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE)
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await getProducts(1)
-        console.log('Fetched products:', response.data.data)
-        // Transform API response to frontend format
-        const formattedProducts = response.data.data.map(formatProduct)
-        setProducts(formattedProducts)
+        setLoading(true)
+        const response = await getProducts(1, currentPage, ITEMS_PER_PAGE)
+        const formatted = response.data.data.map(formatProduct)
+        setProducts(formatted)
+        setTotalProducts(response.data.total || formatted.length)
       } catch (error) {
         console.error('Error fetching products:', error)
+      } finally {
+        setLoading(false)
       }
     }
     fetchProducts()
-  }, [])
-  const toggleFilter = (key) => {
+  }, [currentPage])
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const toggleFilter = (key) =>
     setSelectedFilters((prev) =>
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     )
-  }
 
-  const clearFilters = () => setSelectedFilters([])
-
+  const clearFilters = () => { setSelectedFilters([]); setCurrentPage(1) }
   const activeCount = selectedFilters.length
 
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-screen-xl mx-auto px-4 md:px-6 py-6">
-        {/* ── Top bar: Filter toggle + product count ────────────── */}
+
         <div className="flex items-center justify-between mb-6 border-b border-gray-200 pb-4">
-          <button
-            onClick={() => setFilterOpen(!filterOpen)}
-            className="flex items-center gap-2 text-[13px] text-[#1a1a1a] hover:text-gray-500
-                       transition-colors font-medium"
-          >
+          <button onClick={() => setFilterOpen(!filterOpen)}
+            className="flex items-center gap-2 text-[13px] text-[#1a1a1a] hover:text-gray-500 transition-colors font-medium">
             <FilterIcon />
             Filters
             {activeCount > 0 && (
-              <span
-                className="w-5 h-5 rounded-full bg-[#1a1a1a] text-white text-[10px]
-                               flex items-center justify-center font-semibold"
-              >
+              <span className="w-5 h-5 rounded-full bg-[#1a1a1a] text-white text-[10px] flex items-center justify-center font-semibold">
                 {activeCount}
               </span>
             )}
           </button>
-
-          <p className="text-[13px] text-gray-400 font-light">
-            {TOTAL_PRODUCTS} products
-          </p>
+          <p className="text-[13px] text-gray-400 font-light">{totalProducts.toLocaleString()} products</p>
         </div>
 
-        {/* ── Active filter chips (desktop/tablet, above grid) ──── */}
         {selectedFilters.length > 0 && (
           <div className="hidden md:flex flex-wrap gap-2 mb-5">
-            {selectedFilters.map((key) => {
-              const label = key.split(':')[1]
-              return (
-                <button
-                  key={key}
-                  onClick={() => toggleFilter(key)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300
-                             rounded-full text-[12px] text-gray-600 hover:border-[#1a1a1a]
-                             hover:text-[#1a1a1a] transition-colors font-light"
-                >
-                  ✕ {label}
-                </button>
-              )
-            })}
-            <button
-              onClick={clearFilters}
-              className="px-3 py-1.5 text-[12px] text-gray-400 hover:text-[#1a1a1a]
-                         underline underline-offset-2 transition-colors"
-            >
+            {selectedFilters.map((key) => (
+              <button key={key} onClick={() => toggleFilter(key)}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-full text-[12px] text-gray-600 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-colors font-light">
+                ✕ {key.split(':')[1]}
+              </button>
+            ))}
+            <button onClick={clearFilters}
+              className="px-3 py-1.5 text-[12px] text-gray-400 hover:text-[#1a1a1a] underline underline-offset-2 transition-colors">
               Clear all
             </button>
           </div>
         )}
 
-        {/* ── Main layout: sidebar + grid ──────────────────────── */}
         <div className="flex gap-6">
-          {/* ── DESKTOP/TABLET FILTER SIDEBAR ──────────────────── */}
-          <aside
-            className="hidden md:block flex-shrink-0 overflow-hidden"
-            style={{
-              width: filterOpen ? '260px' : '0px',
-              opacity: filterOpen ? 1 : 0,
-              transition: 'width 0.3s ease, opacity 0.3s ease',
-              display: filterOpen ? undefined : 'none',
-            }}
-          >
-            <FilterSidebar
-              category="clothing"
-              selected={selectedFilters}
-              onToggle={toggleFilter}
-              onClear={clearFilters}
-              onClose={() => setFilterOpen(false)}
-            />
+          <aside className="hidden md:block flex-shrink-0 overflow-hidden"
+            style={{ width: filterOpen ? '260px' : '0px', opacity: filterOpen ? 1 : 0, transition: 'width 0.3s ease, opacity 0.3s ease', display: filterOpen ? undefined : 'none' }}>
+            <FilterSidebar category="clothing" selected={selectedFilters} onToggle={toggleFilter} onClear={clearFilters} onClose={() => setFilterOpen(false)} />
           </aside>
 
-          {/* ── PRODUCT GRID ────────────────────────────────────── */}
           <div className="flex-1 min-w-0">
-            <div
-              className={`grid gap-x-4 gap-y-8 transition-all duration-300
-                /* Mobile: always 2 cols */
-                grid-cols-2
-                /* Tablet: 3 cols default, 2 cols when filter open */
-                ${
-                  filterOpen
-                    ? 'md:grid-cols-2 lg:grid-cols-3'
-                    : 'md:grid-cols-3 lg:grid-cols-4'
-                }
-              `}
-            >
-              {PRODUCTS.map((product) => (
-                // ClothingPage.jsx — make sure this is there
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  variant="clothing"
+            {loading ? (
+              <div className="flex items-center justify-center py-24">
+                <p className="text-[13px] text-gray-400 font-light">Loading...</p>
+              </div>
+            ) : products.length === 0 ? (
+              <div className="flex items-center justify-center py-24">
+                <p className="text-[13px] text-gray-400 font-light">No products found.</p>
+              </div>
+            ) : (
+              <>
+                <div className={`grid gap-x-4 gap-y-8 grid-cols-2 ${filterOpen ? 'md:grid-cols-2 lg:grid-cols-3' : 'md:grid-cols-3 lg:grid-cols-4'}`}>
+                  {products.map((product) => (
+                    <ProductCard key={product.id} product={product} variant="clothing" />
+                  ))}
+                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={10}
+                  totalItems={160}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  onPageChange={handlePageChange}
                 />
-              ))}
-            </div>
+              {/*  <Pagination 
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalProducts}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  onPageChange={handlePageChange}
+                /> */}
+            
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ── MOBILE FILTER OVERLAY ──────────────────────────────── */}
-      {/* Backdrop */}
-      <div
-        className={`md:hidden fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ${
-          filterOpen
-            ? 'opacity-100 pointer-events-auto'
-            : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={() => setFilterOpen(false)}
-      />
-
-      {/* Drawer slides up from bottom */}
-      <div
-        className={`md:hidden fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl
-                    transition-transform duration-300 ease-out
-                    ${filterOpen ? 'translate-y-0' : 'translate-y-full'}`}
-        style={{ maxHeight: '80vh' }}
-      >
+      <div className={`md:hidden fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ${filterOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setFilterOpen(false)} />
+      <div className={`md:hidden fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl transition-transform duration-300 ease-out ${filterOpen ? 'translate-y-0' : 'translate-y-full'}`}
+        style={{ maxHeight: '80vh' }}>
         <div className="p-5 h-full overflow-y-auto">
-          {/* Drag handle */}
           <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
-          <FilterSidebar
-            selected={selectedFilters}
-            onToggle={toggleFilter}
-            onClear={clearFilters}
-            onClose={() => setFilterOpen(false)}
-            isMobile
-          />
+          <FilterSidebar category="clothing" selected={selectedFilters} onToggle={toggleFilter} onClear={clearFilters} onClose={() => setFilterOpen(false)} isMobile />
         </div>
       </div>
     </div>

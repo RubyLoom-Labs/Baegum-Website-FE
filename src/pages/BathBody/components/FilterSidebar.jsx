@@ -2,6 +2,7 @@ import { useState } from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FILTERS PER CATEGORY
+// Replace options with real data from API later
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const FILTERS_BY_CATEGORY = {
