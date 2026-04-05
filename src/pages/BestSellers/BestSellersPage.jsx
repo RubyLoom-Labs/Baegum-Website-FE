@@ -5,7 +5,7 @@ import Pagination from '@/components/ui/Pagination'
 import { getProducts } from '@/services/product'
 //import placeholder from '@/assets/products/best-sellers/p1.png'
 
-const ITEMS_PER_PAGE = 16
+const ITEMS_PER_PAGE = 12
 
 const formatProduct = (apiProduct) => {
     const variant = apiProduct.product_variants?.[0]
@@ -33,6 +33,7 @@ export default function BestSellersPage() {
     const [selectedFilters, setSelectedFilters] = useState([])
     const [products, setProducts] = useState([])
     const [totalProducts, setTotalProducts] = useState(0)
+    const [totalPages, setTotalPages] = useState(0)
     const [currentPage, setCurrentPage] = useState(1)
     const [loading, setLoading] = useState(true)
 
@@ -44,6 +45,7 @@ export default function BestSellersPage() {
                 const formatted = response.data.data.map(formatProduct)
                 setProducts(formatted)
                 setTotalProducts(response.data.total || formatted.length)
+                setTotalPages(response.data.total_pages || Math.ceil(response.data.total / ITEMS_PER_PAGE) || 1)
             } catch (error) {
                 console.error('Error fetching Best Sellers products:', error)
             } finally {

@@ -5,7 +5,7 @@ import Pagination from '@/components/ui/Pagination'
 import { getProducts } from '@/services/product'
 import placeholder from '@/assets/products/bath-body/p1.png'
 
-const ITEMS_PER_PAGE = 16
+const ITEMS_PER_PAGE = 12
 
 const formatProduct = (apiProduct) => {
     const variant = apiProduct.product_variants?.[2]
@@ -33,10 +33,9 @@ export default function BathBodyPage() {
     const [selectedFilters, setSelectedFilters] = useState([])
     const [products, setProducts] = useState([])
     const [totalProducts, setTotalProducts] = useState(0)
+    const [totalPages, setTotalPages] = useState(0)
     const [currentPage, setCurrentPage] = useState(1)
     const [loading, setLoading] = useState(true)
-
-    const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE)
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -48,6 +47,7 @@ export default function BathBodyPage() {
                 const formatted = response.data.data.map(formatProduct)
                 setProducts(formatted)
                 setTotalProducts(response.data.total || formatted.length)
+                setTotalPages(response.data.total_pages || Math.ceil(response.data.total / ITEMS_PER_PAGE) || 1)
             } catch (error) {
                 console.error('Error fetching Bath & Body products:', error)
             } finally {

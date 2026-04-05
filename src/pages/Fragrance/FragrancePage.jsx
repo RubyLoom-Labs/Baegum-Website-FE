@@ -5,7 +5,7 @@ import Pagination from '@/components/ui/Pagination'
 import { getProducts } from '@/services/product'
 import placeholder from '@/assets/products/fragrance/p1.png'
 
-const ITEMS_PER_PAGE = 16
+const ITEMS_PER_PAGE = 12
 
 const formatProduct = (apiProduct) => {
     const variant = apiProduct.product_variants?.[0]
@@ -33,19 +33,20 @@ export default function FragrancePage() {
     const [selectedFilters, setSelectedFilters] = useState([])
     const [products, setProducts] = useState([])
     const [totalProducts, setTotalProducts] = useState(0)
+    const [totalPages, setTotalPages] = useState(0)
     const [currentPage, setCurrentPage] = useState(1)
     const [loading, setLoading] = useState(true)
-
-    const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE)
 
     useEffect(() => {
         const fetchProducts = async () => {
             try {
                 setLoading(true)
-                const response = await getProducts(4, currentPage, ITEMS_PER_PAGE)
-                const formatted = response.data.data.map(formatProduct)
+                const response = await getProducts(currentPage, 4)
+                console.log('Fragrance API Response:', response)
+                const formatted = response.data.map(formatProduct)
                 setProducts(formatted)
-                setTotalProducts(response.data.total || formatted.length)
+                setTotalProducts(response.total_count || formatted.length)
+                setTotalPages(response.total_pages || 1)
             } catch (error) {
                 console.error('Error fetching Fragrance products:', error)
             } finally {
@@ -123,8 +124,8 @@ export default function FragrancePage() {
                                 </div>
                                 <Pagination
                                     currentPage={currentPage}
-                                    totalPages={10}
-                                    totalItems={160}
+                                    totalPages={totalPages}
+                                    totalItems={totalProducts}
                                     itemsPerPage={ITEMS_PER_PAGE}
                                     onPageChange={handlePageChange}
                                 />

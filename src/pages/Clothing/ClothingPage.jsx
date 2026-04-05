@@ -5,7 +5,7 @@ import Pagination from '@/components/ui/Pagination'
 import { getProducts } from '@/services/product'
 import placeholder from '@/assets/products/clothing/p1.png'
 
-const ITEMS_PER_PAGE = 16
+const ITEMS_PER_PAGE = 12
 
 const formatProduct = (apiProduct) => {
   const variant = apiProduct.product_variants?.[0]
@@ -33,19 +33,19 @@ export default function ClothingPage() {
   const [selectedFilters, setSelectedFilters] = useState([])
   const [products, setProducts] = useState([])
   const [totalProducts, setTotalProducts] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
-
-  const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE)
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true)
-        const response = await getProducts(1, currentPage, ITEMS_PER_PAGE)
-        const formatted = response.data.data.map(formatProduct)
+        const response = await getProducts(currentPage,1)
+        const formatted = response.data.map(formatProduct)
         setProducts(formatted)
-        setTotalProducts(response.data.total || formatted.length)
+        setTotalProducts(response.total_count || formatted.length)
+        setTotalPages(response.total_pages || 1)
       } catch (error) {
         console.error('Error fetching products:', error)
       } finally {
@@ -125,19 +125,12 @@ export default function ClothingPage() {
                 </div>
                 <Pagination
                   currentPage={currentPage}
-                  totalPages={10}
-                  totalItems={160}
-                  itemsPerPage={ITEMS_PER_PAGE}
-                  onPageChange={handlePageChange}
-                />
-              {/*  <Pagination 
-                  currentPage={currentPage}
                   totalPages={totalPages}
                   totalItems={totalProducts}
                   itemsPerPage={ITEMS_PER_PAGE}
                   onPageChange={handlePageChange}
-                /> */}
-            
+                />
+
               </>
             )}
           </div>

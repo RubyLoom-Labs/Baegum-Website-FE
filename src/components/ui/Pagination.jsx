@@ -46,8 +46,6 @@ function buildPages(current, total) {
 }
 
 export default function Pagination({ currentPage, totalPages, totalItems, itemsPerPage, onPageChange }) {
-    if (totalPages <= 1) return null;
-
     const pages = buildPages(currentPage, totalPages);
     const showingStart = (currentPage - 1) * itemsPerPage + 1;
     const showingEnd = Math.min(currentPage * itemsPerPage, totalItems);
