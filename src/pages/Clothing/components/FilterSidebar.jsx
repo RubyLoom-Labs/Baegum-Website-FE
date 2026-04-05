@@ -155,13 +155,15 @@ export default function FilterSidebar({ category, selected, onToggle, onClear, o
           if (group.options) {
             return group; // Return hardcoded options as-is
           } else {
-            const options = filterOptions[group.id] || [];
+            const options = Array.isArray(filterOptions[group.id]) ? filterOptions[group.id] : [];
             // Build mapping of id -> name for this group
-            options.forEach(opt => {
-              if (typeof opt === 'object' && opt.id && opt.name) {
-                nameMap[opt.id] = opt.name;
-              }
-            });
+            if (Array.isArray(options)) {
+              options.forEach(opt => {
+                if (typeof opt === 'object' && opt.id && opt.name) {
+                  nameMap[opt.id] = opt.name;
+                }
+              });
+            }
             return {
               ...group,
               options: options,
