@@ -41,8 +41,7 @@ export default function FragrancePage() {
         const fetchProducts = async () => {
             try {
                 setLoading(true)
-                const response = await getProducts(currentPage, 4)
-                console.log('Fragrance API Response:', response)
+                const response = await getProducts(currentPage, 3)
                 const formatted = response.data.map(formatProduct)
                 setProducts(formatted)
                 setTotalProducts(response.total_count || formatted.length)

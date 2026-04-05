@@ -41,13 +41,11 @@ export default function BathBodyPage() {
         const fetchProducts = async () => {
             try {
                 setLoading(true)
-                const response = await getProducts(5, currentPage, ITEMS_PER_PAGE
-
-                )
-                const formatted = response.data.data.map(formatProduct)
+                const response = await getProducts(currentPage, 4)
+                const formatted = response.data.map(formatProduct)
                 setProducts(formatted)
-                setTotalProducts(response.data.total || formatted.length)
-                setTotalPages(response.data.total_pages || Math.ceil(response.data.total / ITEMS_PER_PAGE) || 1)
+                setTotalProducts(response.total_count || formatted.length)
+                setTotalPages(response.total_pages || 1)
             } catch (error) {
                 console.error('Error fetching Bath & Body products:', error)
             } finally {
@@ -126,8 +124,8 @@ export default function BathBodyPage() {
                                 </div>
                                 <Pagination
                                     currentPage={currentPage}
-                                    totalPages={10}
-                                    totalItems={160}
+                                    totalPages={totalPages}
+                                    totalItems={totalProducts}
                                     itemsPerPage={ITEMS_PER_PAGE}
                                     onPageChange={handlePageChange}
                                 />

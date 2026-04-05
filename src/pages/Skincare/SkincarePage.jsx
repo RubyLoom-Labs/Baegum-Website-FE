@@ -41,11 +41,11 @@ export default function SkincarePage() {
         const fetchProducts = async () => {
             try {
                 setLoading(true)
-                const response = await getProducts(6, currentPage, ITEMS_PER_PAGE)
-                const formatted = response.data.data.map(formatProduct)
+                const response = await getProducts(currentPage, 5)
+                const formatted = response.data.map(formatProduct)
                 setProducts(formatted)
-                setTotalProducts(response.data.total || formatted.length)
-                setTotalPages(response.data.total_pages || Math.ceil(response.data.total / ITEMS_PER_PAGE) || 1)
+                setTotalProducts(response.total_count || formatted.length)
+                setTotalPages(response.total_pages || 1)
             } catch (error) {
                 console.error('Error fetching Skincare products:', error)
             } finally {
@@ -61,6 +61,11 @@ export default function SkincarePage() {
         )
     const clearFilters = () => setSelectedFilters([])
     const activeCount = selectedFilters.length
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
 
     return (
         <div className="min-h-screen bg-white">
@@ -113,8 +118,8 @@ export default function SkincarePage() {
                             </div>
                             <Pagination
                                 currentPage={currentPage}
-                                totalPages={10}
-                                totalItems={160}
+                                totalPages={totalPages}
+                                totalItems={totalProducts}
                                 itemsPerPage={ITEMS_PER_PAGE}
                                 onPageChange={handlePageChange}
                             />

@@ -124,8 +124,8 @@ export default function BestSellersPage() {
                                 </div>
                                 <Pagination
                                     currentPage={currentPage}
-                                    totalPages={10}
-                                    totalItems={160}
+                                    totalPages={totalPages}
+                                    totalItems={totalProducts}
                                     itemsPerPage={ITEMS_PER_PAGE}
                                     onPageChange={handlePageChange}
                                 />
