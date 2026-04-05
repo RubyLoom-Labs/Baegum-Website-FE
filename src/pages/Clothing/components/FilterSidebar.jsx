@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "@/services/api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FILTERS PER CATEGORY
@@ -7,10 +8,10 @@ import { useState } from "react";
 export const FILTERS_BY_CATEGORY = {
 
   clothing: [
-    { id: "size", label: "Size", options: ["XS", "S", "M", "L", "XL", "XXL"] },
-    { id: "color", label: "Color", options: ["Black", "White", "Beige", "Brown", "Navy", "Rust", "Cream"] },
-    { id: "fit", label: "Fit", options: ["Slim Fit", "Regular Fit", "Loose Fit", "Oversized"] },
-    { id: "occasion", label: "Occasion", options: ["Casual", "Formal", "Party", "Work", "Weekend"] },
+    { id: "size", label: "Size" },
+    { id: "color", label: "Color" },
+    { id: "fit", label: "Fit" },
+    { id: "occasion", label: "Occasion" },
     { id: "price", label: "Price", options: ["Under Rs.2000", "Rs.2000–5000", "Rs.5000–10000", "Over Rs.10000"] },
   ],
 
@@ -54,6 +55,40 @@ export const FILTERS_BY_CATEGORY = {
   ],
 };
 
+// Fetch filter options from backend
+export const fetchFilterOptions = async (filterIds) => {
+  const filterMap = {};
+  
+  const endpointMap = {
+    size: '/api/catalog/sizes',
+    color: '/api/catalog/colors',
+    fit: '/api/catalog/fits',
+    occasion: '/api/catalog/occasions',
+    type: '/api/catalog/types',
+    scent: '/api/catalog/scents',
+    brand: '/api/catalog/brands',
+    shade: '/api/catalog/shades',
+    skin: '/api/catalog/skin-types',
+    concern: '/api/catalog/concerns',
+  };
+
+  for (const filterId of filterIds) {
+    const endpoint = endpointMap[filterId];
+    if (endpoint) {
+      try {
+        const response = await api.get(endpoint);
+        // Keep full objects with id and name
+        filterMap[filterId] = response.data || [];
+      } catch (error) {
+        console.error(`Error fetching ${filterId}:`, error);
+        filterMap[filterId] = [];
+      }
+    }
+  }
+
+  return filterMap;
+};
+
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
 const CloseIcon = () => (
@@ -94,10 +129,14 @@ function FilterGroup({ group, selected, onToggle }) {
       {open && (
         <div className="pb-3 flex flex-col gap-2">
           {group.options.map((opt) => {
-            const key = `${group.id}:${opt}`;
+            // Handle both object format (with id and name) and string format (hardcoded options)
+            const isObject = typeof opt === 'object' && opt !== null;
+            const id = isObject ? opt.id : opt;
+            const name = isObject ? opt.name : opt;
+            const key = `${group.id}:${id}`;
             const checked = selected.includes(key);
             return (
-              <label key={opt} className="flex items-center gap-2.5 cursor-pointer group">
+              <label key={id} className="flex items-center gap-2.5 cursor-pointer group">
                 <input
                   type="checkbox"
                   checked={checked}
@@ -106,7 +145,7 @@ function FilterGroup({ group, selected, onToggle }) {
                 />
                 <span className="text-[12px] text-gray-600 group-hover:text-[#1a1a1a]
                                  transition-colors font-light">
-                  {opt}
+                  {name}
                 </span>
               </label>
             );
@@ -131,8 +170,76 @@ function FilterGroup({ group, selected, onToggle }) {
 
 export default function FilterSidebar({ category, selected, onToggle, onClear, onClose, isMobile }) {
 
+  const [dynamicGroups, setDynamicGroups] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [idToNameMap, setIdToNameMap] = useState({});
+
   // Pick the right filter groups for this category
-  const groups = FILTERS_BY_CATEGORY[category] || [];
+  const baseGroups = FILTERS_BY_CATEGORY[category] || [];
+
+  // Fetch dynamic filter options when category changes
+  useEffect(() => {
+    const loadDynamicFilters = async () => {
+      try {
+        setLoading(true);
+        const dynamicFilterIds = baseGroups
+          .filter(group => !group.options) // Only fetch for groups without hardcoded options
+          .map(group => group.id);
+
+        if (dynamicFilterIds.length === 0) {
+          setDynamicGroups(baseGroups);
+          setIdToNameMap({});
+          setLoading(false);
+          return;
+        }
+
+        const filterOptions = await fetchFilterOptions(dynamicFilterIds);
+        const nameMap = {};
+        
+        const groupsWithOptions = baseGroups.map(group => {
+          if (group.options) {
+            return group; // Return hardcoded options as-is
+          } else {
+            const options = filterOptions[group.id] || [];
+            // Build mapping of id -> name for this group
+            options.forEach(opt => {
+              if (typeof opt === 'object' && opt.id && opt.name) {
+                nameMap[opt.id] = opt.name;
+              }
+            });
+            return {
+              ...group,
+              options: options,
+            };
+          }
+        });
+
+        setDynamicGroups(groupsWithOptions);
+        setIdToNameMap(nameMap);
+      } catch (error) {
+        console.error('Error loading filters:', error);
+        setDynamicGroups(baseGroups);
+        setIdToNameMap({});
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDynamicFilters();
+  }, [category, baseGroups]);
+
+  const groups = dynamicGroups;
+
+  // Function to get display name for a filter value
+  const getDisplayName = (key) => {
+    const [groupId, value] = key.split(":");
+    // Check if value is in our ID to name map (for dynamic filters)
+    if (idToNameMap[value]) {
+      return idToNameMap[value];
+    }
+    // For hardcoded filters, the value is already the name
+    return value;
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -155,7 +262,7 @@ export default function FilterSidebar({ category, selected, onToggle, onClear, o
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-1.5 pt-3 pb-2">
           {selected.map((key) => {
-            const label = key.split(":")[1];
+            const label = getDisplayName(key);
             return (
               <button
                 key={key}
@@ -179,7 +286,9 @@ export default function FilterSidebar({ category, selected, onToggle, onClear, o
 
       {/* Filter groups — scrollable */}
       <div className="flex-1 overflow-y-auto mt-1">
-        {groups.length > 0 ? (
+        {loading ? (
+          <p className="text-[12px] text-gray-400 font-light pt-4">Loading filters...</p>
+        ) : groups.length > 0 ? (
           groups.map((group) => (
             <FilterGroup
               key={group.id}
