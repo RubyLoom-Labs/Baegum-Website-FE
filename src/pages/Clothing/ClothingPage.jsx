@@ -14,7 +14,7 @@ const formatProduct = (apiProduct) => {
     image: apiProduct.image || placeholder,
     name: apiProduct.name,
     description: apiProduct.description || `${apiProduct.brand?.name || ''} - ${apiProduct.product_category?.name || ''}`,
-    price: variant ? `Rs.${parseFloat(variant.unit_price).toFixed(2)}` : 'Rs.0.00',
+    price:  `Rs.${parseFloat(apiProduct.price).toFixed(2)}` ?? 'Rs.0.00',
     href: `/products/clothing/${apiProduct.id}`,
   }
 }
@@ -92,21 +92,6 @@ export default function ClothingPage() {
           </button>
           <p className="text-[13px] text-gray-400 font-light">{totalProducts.toLocaleString()} products</p>
         </div>
-
-        {selectedFilters.length > 0 && (
-          <div className="hidden md:flex flex-wrap gap-2 mb-5">
-            {selectedFilters.map((key) => (
-              <button key={key} onClick={() => toggleFilter(key)}
-                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-full text-[12px] text-gray-600 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-colors font-light">
-                ✕ {key.split(':')[1]}
-              </button>
-            ))}
-            <button onClick={clearFilters}
-              className="px-3 py-1.5 text-[12px] text-gray-400 hover:text-[#1a1a1a] underline underline-offset-2 transition-colors">
-              Clear all
-            </button>
-          </div>
-        )}
 
         <div className="flex gap-6">
           <aside className="hidden md:block flex-shrink-0 overflow-hidden"

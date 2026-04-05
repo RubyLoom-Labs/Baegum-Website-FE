@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api from "@/services/api";
+import { getItems } from "@/services/filterItems";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FILTERS PER CATEGORY
@@ -14,69 +14,24 @@ export const FILTERS_BY_CATEGORY = {
     { id: "occasion", label: "Occasion" },
     { id: "price", label: "Price", options: ["Under Rs.2000", "Rs.2000–5000", "Rs.5000–10000", "Over Rs.10000"] },
   ],
-
-  fragrance: [
-    { id: "type", label: "Type", options: ["Eau de Parfum", "Eau de Toilette", "Body Mist"] },
-    { id: "scent", label: "Scent", options: ["Floral", "Woody", "Fresh", "Oriental"] },
-    { id: "size", label: "Size (ml)", options: ["30ml", "50ml", "100ml"] },
-    { id: "brand", label: "Brand", options: ["BAEGUM", "Velora", "Luxe"] },
-    { id: "price", label: "Price", options: ["Under Rs.2000", "Rs.2000–5000", "Over Rs.5000"] },
-  ],
-
-  makeup: [
-    { id: "type", label: "Type", options: ["Lipstick", "Foundation", "Mascara", "Blush", "Eyeshadow"] },
-    { id: "shade", label: "Shade", options: ["Light", "Medium", "Dark"] },
-    { id: "brand", label: "Brand", options: ["BAEGUM", "Luxe"] },
-    { id: "price", label: "Price", options: ["Under Rs.1000", "Rs.1000–3000", "Over Rs.3000"] },
-  ],
-
-  skincare: [
-    { id: "type", label: "Type", options: ["Moisturizer", "Serum", "Cleanser", "Toner", "SPF"] },
-    { id: "skin", label: "Skin Type", options: ["Dry", "Oily", "Combination", "Sensitive"] },
-    { id: "concern", label: "Concern", options: ["Anti-aging", "Brightening", "Hydration", "Acne"] },
-    { id: "price", label: "Price", options: ["Under Rs.1500", "Rs.1500–4000", "Over Rs.4000"] },
-  ],
-
-  "bath-body": [
-    { id: "type", label: "Type", options: ["Body Wash", "Lotion", "Scrub", "Oil", "Bath Soak"] },
-    { id: "scent", label: "Scent", options: ["Lavender", "Rose", "Vanilla", "Citrus", "Unscented"] },
-    { id: "price", label: "Price", options: ["Under Rs.1000", "Rs.1000–3000", "Over Rs.3000"] },
-  ],
-
-  brands: [
-    { id: "brand", label: "Brand", options: ["BAEGUM", "Velora", "Luxe", "Classic Modal"] },
-    { id: "category", label: "Category", options: ["Clothing", "Fragrance", "Makeup", "Skincare"] },
-    { id: "price", label: "Price", options: ["Under Rs.2000", "Rs.2000–5000", "Over Rs.5000"] },
-  ],
-
-  "best-sellers": [
-    { id: "category", label: "Category", options: ["Clothing", "Fragrance", "Makeup", "Skincare", "Bath & Body"] },
-    { id: "price", label: "Price", options: ["Under Rs.2000", "Rs.2000–5000", "Over Rs.5000"] },
-  ],
 };
 
 // Fetch filter options from backend
-export const fetchFilterOptions = async (filterIds) => {
+export const fetchFilterOptions = async (filterIds, category) => {
   const filterMap = {};
-  
+
   const endpointMap = {
-    size: '/api/catalog/sizes',
-    color: '/api/catalog/colors',
-    fit: '/api/catalog/fits',
-    occasion: '/api/catalog/occasions',
-    type: '/api/catalog/types',
-    scent: '/api/catalog/scents',
-    brand: '/api/catalog/brands',
-    shade: '/api/catalog/shades',
-    skin: '/api/catalog/skin-types',
-    concern: '/api/catalog/concerns',
+    size: `/api/catalog/sizes?category=${category}`,
+    color: `/api/catalog/colors`,
+    fit: `/api/catalog/fits?category`,
+    occasion: `/api/catalog/occasions`,
   };
 
   for (const filterId of filterIds) {
     const endpoint = endpointMap[filterId];
     if (endpoint) {
       try {
-        const response = await api.get(endpoint);
+        const response = await getItems(endpoint);
         // Keep full objects with id and name
         filterMap[filterId] = response.data || [];
       } catch (error) {
@@ -193,9 +148,9 @@ export default function FilterSidebar({ category, selected, onToggle, onClear, o
           return;
         }
 
-        const filterOptions = await fetchFilterOptions(dynamicFilterIds);
+        const filterOptions = await fetchFilterOptions(dynamicFilterIds, 1);
         const nameMap = {};
-        
+
         const groupsWithOptions = baseGroups.map(group => {
           if (group.options) {
             return group; // Return hardcoded options as-is
