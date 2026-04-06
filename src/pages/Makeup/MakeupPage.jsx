@@ -15,7 +15,7 @@ const formatProduct = (apiProduct) => {
         image: apiProduct.image || placeholder,
         name: apiProduct.name,
         description: apiProduct.description || `${apiProduct.brand?.name || ''} - ${apiProduct.product_category?.name || ''}`,
-        price: variant ? `Rs.${parseFloat(variant.unit_price).toFixed(2)}` : 'Rs.0.00',
+        price: `Rs.${parseFloat(apiProduct.price).toFixed(2)}` ?? 'Rs.0.00',
         href: `/products/makeup/${apiProduct.id}`,
     }
 }
@@ -47,7 +47,12 @@ export default function MakeupPage() {
         const fetchProducts = async () => {
             try {
                 setLoading(true)
-                const response = await getProducts(currentPage, 2)
+                const filterParams = selectedFilters.reduce((acc, filter) => {
+                    const [key, value] = filter.split(':')
+                    acc[key] = [...(acc[key] || []), value]
+                    return acc
+                }, {})
+                const response = await getProducts(currentPage, 2, filterParams)
                 const formatted = response.data.map(formatProduct)
                 setProducts(formatted)
                 setTotalProducts(response.total_count || formatted.length)
@@ -59,19 +64,21 @@ export default function MakeupPage() {
             }
         }
         fetchProducts()
-    }, [currentPage])
+    }, [currentPage, selectedFilters])
 
     const handlePageChange = (page) => {
         setCurrentPage(page)
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
-    const toggleFilter = (key) =>
+    const toggleFilter = (key) => {
         setSelectedFilters((prev) =>
             prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
         )
+        setCurrentPage(1)
+    }
 
-    const clearFilters = () => setSelectedFilters([])
+    const clearFilters = () => { setSelectedFilters([]); setCurrentPage(1) }
     const activeCount = selectedFilters.length
 
     return (
@@ -97,24 +104,7 @@ export default function MakeupPage() {
                     <p className="text-[13px] text-gray-400 font-light">{totalProducts} products</p>
                 </div>
 
-                {/* Active filter chips */}
-                {selectedFilters.length > 0 && (
-                    <div className="hidden md:flex flex-wrap gap-2 mb-5">
-                        {selectedFilters.map((key) => (
-                            <button key={key} onClick={() => toggleFilter(key)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300
-                           rounded-full text-[12px] text-gray-600 hover:border-[#1a1a1a]
-                           hover:text-[#1a1a1a] transition-colors font-light">
-                                ✕ {key.split(':')[1]}
-                            </button>
-                        ))}
-                        <button onClick={clearFilters}
-                            className="px-3 py-1.5 text-[12px] text-gray-400 hover:text-[#1a1a1a]
-                         underline underline-offset-2 transition-colors">
-                            Clear all
-                        </button>
-                    </div>
-                )}
+
 
                 {/* Sidebar + Grid */}
                 <div className="flex gap-6">

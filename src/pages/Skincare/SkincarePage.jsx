@@ -41,7 +41,12 @@ export default function SkincarePage() {
         const fetchProducts = async () => {
             try {
                 setLoading(true)
-                const response = await getProducts(currentPage, 5)
+                const filterParams = selectedFilters.reduce((acc, filter) => {
+                    const [key, value] = filter.split(':')
+                    acc[key] = [...(acc[key] || []), value]
+                    return acc
+                }, {})
+                const response = await getProducts(currentPage, 5, filterParams)
                 const formatted = response.data.map(formatProduct)
                 setProducts(formatted)
                 setTotalProducts(response.total_count || formatted.length)
@@ -53,13 +58,15 @@ export default function SkincarePage() {
             }
         }
         fetchProducts()
-    }, [currentPage])
+    }, [currentPage, selectedFilters])
 
-    const toggleFilter = (key) =>
+    const toggleFilter = (key) => {
         setSelectedFilters((prev) =>
             prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
         )
-    const clearFilters = () => setSelectedFilters([])
+        setCurrentPage(1)
+    }
+    const clearFilters = () => { setSelectedFilters([]); setCurrentPage(1) }
     const activeCount = selectedFilters.length
 
     const handlePageChange = (page) => {

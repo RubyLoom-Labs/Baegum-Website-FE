@@ -186,11 +186,24 @@ export default function FilterSidebar({ category, selected, onToggle, onClear, o
   // Function to get display name for a filter value
   const getDisplayName = (key) => {
     const [groupId, value] = key.split(":");
-    // Check if value is in our ID to name map (for dynamic filters)
-    if (idToNameMap[value]) {
-      return idToNameMap[value];
+
+    // Find the group that contains this filter
+    const group = dynamicGroups.find(g => g.id === groupId);
+    if (!group || !group.options) {
+      return value;
     }
-    // For hardcoded filters, the value is already the name
+
+    // Search through the group's options to find the matching option
+    const option = group.options.find(opt => {
+      const optId = typeof opt === 'object' && opt.id !== undefined ? String(opt.id) : opt;
+      return optId === value;
+    });
+
+    // If found, return the name; otherwise return the value as fallback
+    if (option) {
+      return typeof option === 'object' ? option.name : option;
+    }
+
     return value;
   };
 
