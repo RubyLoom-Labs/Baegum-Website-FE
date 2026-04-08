@@ -10,6 +10,7 @@ export const FILTERS_BY_CATEGORY = {
   "bath-body": [
     { id: "type", label: "Type" },
     { id: "scent", label: "Scent" },
+    { id: "brand", label: "Brand" },
     { id: "price", label: "Price", options: ["Under Rs.1000", "Rs.1000–3000", "Over Rs.3000"] },
   ],
 
@@ -22,6 +23,7 @@ export const fetchFilterOptions = async (filterIds, category) => {
   const endpointMap = {
     type: `/api/catalog/types?category=${category}`,
     scent: `/api/catalog/scents?category=${category}`,
+    brand: `/api/catalog/brands?category=${category}`,
   };
 
   for (const filterId of filterIds) {
