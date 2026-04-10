@@ -14,7 +14,7 @@ const formatProduct = (apiProduct) => {
         image: apiProduct.image || placeholder,
         name: apiProduct.name,
         description: apiProduct.description || `${apiProduct.brand?.name || ''} - ${apiProduct.product_category?.name || ''}`,
-        price: variant ? `Rs.${parseFloat(variant.unit_price).toFixed(2)}` : 'Rs.0.00',
+        price: `Rs.${parseFloat(apiProduct.price).toFixed(2)}` ?? 'Rs.0.00',
         href: `/products/fragrance/${apiProduct.id}`,
     }
 }
