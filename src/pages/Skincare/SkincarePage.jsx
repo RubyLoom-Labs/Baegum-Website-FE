@@ -14,7 +14,7 @@ const formatProduct = (apiProduct) => {
         image: apiProduct.image || placeholder,
         name: apiProduct.name,
         description: apiProduct.description || `${apiProduct.brand?.name || ''} - ${apiProduct.product_category?.name || ''}`,
-        price: variant ? `Rs.${parseFloat(variant.unit_price).toFixed(2)}` : 'Rs.0.00',
+        price: `Rs.${parseFloat(apiProduct.price).toFixed(2)}` ?? 'Rs.0.00',
         href: `/products/skincare/${apiProduct.id}`,
     }
 }
@@ -106,7 +106,13 @@ export default function SkincarePage() {
                     </div>
                 )}
 
-                <div className="flex-1 min-w-0">
+                <div className="flex gap-6">
+                    <aside className="hidden md:block flex-shrink-0 overflow-hidden"
+                        style={{ width: filterOpen ? '260px' : '0px', opacity: filterOpen ? 1 : 0, transition: 'width 0.3s ease, opacity 0.3s ease', display: filterOpen ? undefined : 'none' }}>
+                        <FilterSidebar category="skincare" selected={selectedFilters} onToggle={toggleFilter} onClear={clearFilters} onClose={() => setFilterOpen(false)} />
+                    </aside>
+
+                    <div className="flex-1 min-w-0">
                     {loading ? (
                         <div className="flex items-center justify-center py-20">
                             <p className="text-[13px] text-gray-400 font-light">Loading...</p>
@@ -132,6 +138,7 @@ export default function SkincarePage() {
                             />
                         </>
                     )}
+                </div>
                 </div>
             </div>
 
