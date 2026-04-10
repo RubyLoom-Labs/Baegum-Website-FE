@@ -2,20 +2,19 @@ import { useEffect, useState } from 'react'
 import ProductCard from '@/components/ui/ProductCard'
 import FilterSidebar from './components/FilterSidebar'
 import Pagination from '@/components/ui/Pagination'
-import { getProducts } from '@/services/product'
-//import placeholder from '@/assets/products/brands/p1.png'
+import { getBrands } from '@/services/brands'
+import placeholder from '@/assets/products/skincare/p1.png'
 
 const ITEMS_PER_PAGE = 12
 
-const formatProduct = (apiProduct) => {
-    const variant = apiProduct.product_variants?.[0]
+const formatProduct = (apiBrand) => {
     return {
-        id: apiProduct.id,
-        image: apiProduct.image || placeholder,
-        name: apiProduct.name,
-        description: apiProduct.description || `${apiProduct.brand?.name || ''} - ${apiProduct.product_category?.name || ''}`,
-        price: variant ? `Rs.${parseFloat(variant.unit_price).toFixed(2)}` : 'Rs.0.00',
-        href: `/products/brands/${apiProduct.id}`,
+        id: apiBrand.id,
+        image: apiBrand.image || placeholder,
+        name: apiBrand.name,
+        description: apiBrand.description || '',
+        price: 'View Details',
+        href: `/brands/${apiBrand.id}`,
     }
 }
 
@@ -41,30 +40,39 @@ export default function BrandsPage() {
         const fetchProducts = async () => {
             try {
                 setLoading(true)
-                const response = await getProducts(6)
-                const formatted = response.data.data.map(formatProduct)
+                const filterParams = selectedFilters.reduce((acc, filter) => {
+                    const [key, value] = filter.split(':')
+                    acc[key] = [...(acc[key] || []), value]
+                    return acc
+                }, {})
+                const response = await getBrands(currentPage, ITEMS_PER_PAGE, filterParams)
+                // Handle paginated response structure
+                const brandsData = response.data?.data || response.data || []
+                const formatted = brandsData.map(formatProduct)
                 setProducts(formatted)
-                setTotalProducts(response.data.total || formatted.length)
-                setTotalPages(response.data.total_pages || Math.ceil(response.data.total / ITEMS_PER_PAGE) || 1)
+                setTotalProducts(response.data?.total || response.total || brandsData.length)
+                setTotalPages(response.data?.last_page || response.total_pages || 1)
             } catch (error) {
-                console.error('Error fetching Brands products:', error)
+                console.error('Error fetching Brands:', error)
             } finally {
                 setLoading(false)
             }
         }
         fetchProducts()
-    }, [currentPage])
+    }, [currentPage, selectedFilters])
 
     const handlePageChange = (page) => {
         setCurrentPage(page)
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
-    const toggleFilter = (key) =>
+    const toggleFilter = (key) => {
         setSelectedFilters((prev) =>
             prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
         )
-    const clearFilters = () => setSelectedFilters([])
+        setCurrentPage(1)
+    }
+    const clearFilters = () => { setSelectedFilters([]); setCurrentPage(1) }
     const activeCount = selectedFilters.length
 
     return (
