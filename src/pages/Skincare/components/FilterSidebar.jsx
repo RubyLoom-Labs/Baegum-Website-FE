@@ -11,7 +11,7 @@ export const FILTERS_BY_CATEGORY = {
     { id: "type", label: "Type" },
     { id: "skin", label: "Skin Type" },
     { id: "concern", label: "Concern" },
-    { id: "price", label: "Price", options: ["Under Rs.1500", "Rs.1500–4000", "Over Rs.4000"] },
+    { id: "price", label: "Price" },
   ],
 
 };
@@ -24,6 +24,7 @@ export const fetchFilterOptions = async (filterIds, category) => {
     type: `/api/catalog/types?category=${category}`,
     skin: `/api/catalog/skin-types?category=${category}`,
     concern: `/api/catalog/concerns?category=${category}`,
+    price: `/api/price-ranges`,
   };
 
   for (const filterId of filterIds) {
@@ -31,8 +32,8 @@ export const fetchFilterOptions = async (filterIds, category) => {
     if (endpoint) {
       try {
         const response = await getItems(endpoint);
-        // Keep full objects with id and name
-        filterMap[filterId] = response.data || [];
+        // Handle both paginated (data.data) and direct (data) response formats
+        filterMap[filterId] = response.data?.data || response.data || [];
       } catch (error) {
         console.error(`Error fetching ${filterId}:`, error);
         filterMap[filterId] = [];

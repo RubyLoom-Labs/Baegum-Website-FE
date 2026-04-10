@@ -12,7 +12,7 @@ export const FILTERS_BY_CATEGORY = {
     { id: "color", label: "Color" },
     { id: "fit", label: "Fit" },
     { id: "occasion", label: "Occasion" },
-    { id: "price", label: "Price", options: ["Under Rs.2000", "Rs.2000–5000", "Rs.5000–10000", "Over Rs.10000"] },
+    { id: "price", label: "Price" },
   ],
 };
 
@@ -25,6 +25,7 @@ export const fetchFilterOptions = async (filterIds, category) => {
     color: `/api/catalog/colors`,
     fit: `/api/catalog/fits?category`,
     occasion: `/api/catalog/occasions`,
+    price: `/api/price-ranges`,
   };
 
   for (const filterId of filterIds) {
@@ -32,8 +33,8 @@ export const fetchFilterOptions = async (filterIds, category) => {
     if (endpoint) {
       try {
         const response = await getItems(endpoint);
-        // Keep full objects with id and name
-        filterMap[filterId] = response.data || [];
+        // Handle both paginated (data.data) and direct (data) response formats
+        filterMap[filterId] = response.data?.data || response.data || [];
       } catch (error) {
         console.error(`Error fetching ${filterId}:`, error);
         filterMap[filterId] = [];
