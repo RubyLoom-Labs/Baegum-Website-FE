@@ -74,13 +74,13 @@ const BtnOutline = ({ label, onClick, small }) => (
 // ─────────────────────────────────────────────────────────────────────────────
 
 function AddAddressForm({ onSave, onCancel, isLoading = false }) {
-  const [form, setForm] = useState({ 
+  const [form, setForm] = useState({
     label: '',
-    street1: '', 
+    street1: '',
     street2: '',
-    city: '', 
-    district: '', 
-    province: '', 
+    city: '',
+    district: '',
+    province: '',
     postal_code: ''
   })
   const [errors, setErrors] = useState({})
@@ -121,7 +121,7 @@ function AddAddressForm({ onSave, onCancel, isLoading = false }) {
 
       // Call API to create address
       const result = await createUserAddress(addressData)
-      
+
       // Format response for display
       const formattedAddress = {
         id: result.id,
@@ -137,7 +137,7 @@ function AddAddressForm({ onSave, onCancel, isLoading = false }) {
         postal_code: form.postal_code,
         label: form.label
       }
-      
+
       onSave(formattedAddress)
     } catch (error) {
       console.error('Failed to save address:', error)
@@ -157,7 +157,7 @@ function AddAddressForm({ onSave, onCancel, isLoading = false }) {
           <Field placeholder="Address Label (e.g., Home, Office)" value={form.label} onChange={set('label')} disabled={isSaving} />
           {errors.label && <p className="text-[10px] text-red-500 mt-1">{errors.label}</p>}
         </div>
-        
+
         {/* Street Addresses */}
         <div>
           <Field placeholder="Street Address 1" value={form.street1} onChange={set('street1')} disabled={isSaving} />
@@ -166,7 +166,7 @@ function AddAddressForm({ onSave, onCancel, isLoading = false }) {
         <div>
           <Field placeholder="Street Address 2 (Optional)" value={form.street2} onChange={set('street2')} disabled={isSaving} />
         </div>
-        
+
         {/* City and District */}
         <div className="flex gap-3">
           <div className="flex-1">
@@ -178,7 +178,7 @@ function AddAddressForm({ onSave, onCancel, isLoading = false }) {
             {errors.district && <p className="text-[10px] text-red-500 mt-1">{errors.district}</p>}
           </div>
         </div>
-        
+
         {/* Province and Postal Code */}
         <div className="flex gap-3">
           <div className="flex-1">
@@ -189,7 +189,7 @@ function AddAddressForm({ onSave, onCancel, isLoading = false }) {
             <Field placeholder="Postal Code" value={form.postal_code} onChange={set('postal_code')} half disabled={isSaving} />
           </div>
         </div>
-        
+
         {/* Buttons */}
         <div className="flex gap-2 mt-1">
           <BtnOutline label="Cancel" onClick={onCancel} />
@@ -237,7 +237,7 @@ export default function CheckoutPage() {
         setLoadingAddresses(true)
         setAddressError(null)
         const response = await getUserAddresses()
-        
+
         // Handle paginated response: response.data.data is the array
         // or response.data could be direct array, or response could be direct
         let addressList = []
@@ -248,7 +248,7 @@ export default function CheckoutPage() {
         } else if (Array.isArray(response)) {
           addressList = response // Direct array
         }
-        
+
         // Format addresses from API response
         const formattedAddresses = addressList.map(addr => {
           const detail = addr.address_detail || {}
@@ -268,9 +268,9 @@ export default function CheckoutPage() {
             label: detail.label
           }
         })
-        
+
         setAddresses(formattedAddresses)
-        
+
         // Set default address or first address
         const defaultAddress = formattedAddresses.find(a => a.isDefault)
         setSelectedAddressId(defaultAddress?.id || formattedAddresses[0]?.id || null)
@@ -436,14 +436,14 @@ export default function CheckoutPage() {
 
               {/* Card */}
               <label className={`flex items-center gap-3 p-4 border rounded-sm transition-colors
-                ${paymentMethod === 'card' ? 'border-[#1a1a1a] bg-gray-50' : 'border-gray-200'} 
+                ${paymentMethod === 'card' ? 'border-[#1a1a1a] bg-gray-50' : 'border-gray-200'}
                 opacity-50 cursor-not-allowed`}>
                 <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0
                   ${paymentMethod === 'card' ? 'border-[#1a1a1a]' : 'border-gray-300'}`}>
                   {paymentMethod === 'card' && <div className="w-2 h-2 rounded-full bg-[#1a1a1a]" />}
                 </div>
                 <input type="radio" name="payment" value="card"
-                  checked={paymentMethod === 'card'} onChange={() => {}} 
+                  checked={paymentMethod === 'card'} onChange={() => {}}
                   disabled
                   className="sr-only" />
                 <div>

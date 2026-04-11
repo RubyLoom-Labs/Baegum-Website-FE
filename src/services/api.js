@@ -89,7 +89,7 @@ async function apiRequest(endpoint, options = {}) {
   if (token) {
     const trimmedToken = token.trim();
     defaultOptions.headers.Authorization = `Bearer ${trimmedToken}`;
-    
+
     // Debug logging
     console.log('🔐 API Request Debug:', {
       endpoint,
@@ -158,8 +158,12 @@ export function put(endpoint, data) {
 /**
  * DELETE request
  */
-export function deleteRequest(endpoint) {
-  return apiRequest(endpoint, { method: 'DELETE' })
+export function deleteRequest(endpoint, data) {
+  const options = { method: 'DELETE' };
+  if (data) {
+    options.body = JSON.stringify(data);
+  }
+  return apiRequest(endpoint, options);
 }
 
 export default {

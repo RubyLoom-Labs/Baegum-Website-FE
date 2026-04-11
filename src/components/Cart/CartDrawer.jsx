@@ -1,5 +1,6 @@
 import { useCart } from "@/context/CartContext";
 import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
@@ -26,7 +27,17 @@ const TrashIcon = () => (
 // ─────────────────────────────────────────────────────────────────────────────
 
 function CartItem({ item }) {
-  const { increaseQty, decreaseQty, removeItem } = useCart();
+  const { increaseQty, decreaseQty, removeItem, updateError } = useCart();
+  const [isRemoving, setIsRemoving] = useState(false);
+
+  const handleRemove = async () => {
+    setIsRemoving(true);
+    try {
+      await removeItem(item.id);
+    } finally {
+      setIsRemoving(false);
+    }
+  };
 
   return (
     <div className="flex gap-4 py-5 border-b border-gray-100">
@@ -53,12 +64,18 @@ function CartItem({ item }) {
           <p className="text-[12px] text-gray-500 font-light mt-0.5">{item.variant}</p>
         )}
 
+        <p className="text-[11px] text-gray-400 font-light mt-1">
+          Stock: {item.stock}
+        </p>
+
         <div className="flex items-center justify-between mt-3">
           <div className="flex items-center border border-gray-200 rounded">
             <button
               onClick={() => decreaseQty(item.id)}
+              disabled={item.qty <= 1}
               className="w-7 h-7 flex items-center justify-center text-[#1a1a1a]
-                         hover:bg-gray-100 active:bg-gray-200 transition-colors text-[16px] font-light"
+                         hover:bg-gray-100 active:bg-gray-200 transition-colors text-[16px] font-light
+                         disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Decrease quantity"
             >−</button>
             <span className="w-8 text-center text-[13px] font-medium text-[#1a1a1a]">
@@ -66,15 +83,20 @@ function CartItem({ item }) {
             </span>
             <button
               onClick={() => increaseQty(item.id)}
+              disabled={item.qty >= item.stock || !item.stock}
               className="w-7 h-7 flex items-center justify-center text-[#1a1a1a]
-                         hover:bg-gray-100 active:bg-gray-200 transition-colors text-[16px] font-light"
+                         hover:bg-gray-100 active:bg-gray-200 transition-colors text-[16px] font-light
+                         disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Increase quantity"
+              title={item.qty >= item.stock ? "Stock limit reached" : item.stock === 0 ? "Out of stock" : ""}
             >+</button>
           </div>
 
           <button
-            onClick={() => removeItem(item.id)}
-            className="text-gray-400 hover:text-red-400 active:text-red-600 transition-colors p-1"
+            onClick={handleRemove}
+            disabled={isRemoving}
+            className="text-gray-400 hover:text-red-400 active:text-red-600 transition-colors p-1
+                       disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Remove item"
           >
             <TrashIcon />
@@ -91,7 +113,7 @@ function CartItem({ item }) {
 
 export default function CartDrawer() {
   const navigate = useNavigate();
-  const { cartOpen, closeCart, items, total, count } = useCart();
+  const { cartOpen, closeCart, items, total, count, updateError } = useCart();
   const isEmpty = items.length === 0;
 
   return (
@@ -139,6 +161,11 @@ export default function CartDrawer() {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6">
+          {updateError && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-[12px] text-red-700">
+              {updateError}
+            </div>
+          )}
           {isEmpty ? (
             <div className="flex flex-col items-center justify-center h-full gap-6 py-16">
               <p className="text-[14px] text-gray-400 font-light">No Items</p>

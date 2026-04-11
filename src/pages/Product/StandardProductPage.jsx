@@ -6,6 +6,7 @@ import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
 import { getItems } from "@/services/filterItems";
+import { addToCart as addToCartAPI } from "@/services/cart";
 
 import wishlistIcon from "@/assets/icons/wishlist.svg";
 
@@ -31,6 +32,8 @@ export default function StandardProductPage({ product, categoryId }) {
   const [selectedSizeId,  setSelectedSizeId]  = useState(null);
   const [displayPrice,    setDisplayPrice]    = useState(product.price);
   const [combinationError, setCombinationError] = useState(null);
+  const [addingToCart,    setAddingToCart]    = useState(false);
+  const [cartError,       setCartError]       = useState(null);
 
   // Fetch all available sizes for this category
   useEffect(() => {
@@ -180,7 +183,7 @@ export default function StandardProductPage({ product, categoryId }) {
     }
   }, [selectedColorId, selectedSizeId, product]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
 
     if (!isLoggedIn) {
       openLogin();
@@ -205,18 +208,67 @@ export default function StandardProductPage({ product, categoryId }) {
       // Combination is invalid, don't add to cart
       return;
     }
+    
     setSizeError(false);
     setColorError(false);
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: displayPrice,
-      image: product.images?.[0] || null,
-      variant: [selectedSize, selectedColor?.name].filter(Boolean).join(" / "),
-    });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
-    openCart();
+    setCartError(null);
+    setAddingToCart(true);
+
+    try {
+      // Find the matching variant ID
+      const selectedVariant = product.productVariants?.find(variant => {
+        const criteria = variant.criteria || [];
+        const matches = [];
+        
+        if (selectedSizeId) {
+          matches.push(criteria.some(
+            c => c.criteria_type?.code === 'size' && c.criteria_value_id === selectedSizeId
+          ));
+        }
+        
+        if (selectedColorId) {
+          matches.push(criteria.some(
+            c => c.criteria_type?.code === 'color' && c.criteria_value_id === selectedColorId
+          ));
+        }
+        
+        return matches.length > 0 && matches.every(m => m === true);
+      });
+
+      // Prepare cart item data for API
+      const cartItemData = {
+        product_id: product.id,
+        quantity: 1,
+        price: displayPrice,
+        variant_id: selectedVariant?.id
+      };
+
+      // Save to backend first
+      const addResponse = await addToCartAPI(cartItemData);
+      const apiData = addResponse.data || addResponse;
+
+      // Then add to frontend cart
+      addItem({
+        id: apiData.id, // Use cart item ID from API as unique identifier
+        product_id: product.id,
+        name: product.name,
+        price: displayPrice,
+        image: product.images?.[0] || null,
+        variant: [selectedSize, selectedColor?.name].filter(Boolean).join(" / "),
+        variant_id: selectedVariant?.id,
+        stock: selectedVariant?.stock || 0,
+        cart_item_id: apiData.id, // Store same ID for clarity
+      });
+      
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
+      openCart();
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+      setCartError(error.message || 'Failed to add item to cart. Please try again.');
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   const wishlisted = isWishlisted(product.id);
@@ -382,24 +434,35 @@ export default function StandardProductPage({ product, categoryId }) {
               </div>
             )}
 
+            {/* Cart error message */}
+            {cartError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-[12px] text-red-600 font-light">
+                  {cartError}
+                </p>
+              </div>
+            )}
+
             {/* CTA buttons */}
             <div className="flex flex-col gap-3 mt-8">
               <button
                 onClick={handleAddToCart}
+                disabled={addingToCart}
                 className="w-full py-4 bg-[#1a1a1a] hover:bg-gray-800 active:bg-gray-700
                            text-white text-[14px] font-medium tracking-wide transition-colors
                            disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {added ? "Added ✓" : "Buy Now"}
+                {addingToCart ? "Adding to Cart..." : added ? "Added ✓" : "Buy Now"}
               </button>
               <button
                 onClick={handleAddToCart}
+                disabled={addingToCart}
                 className="w-full py-4 border border-gray-300 hover:border-[#1a1a1a]
                            hover:bg-gray-50 active:bg-gray-100 text-[#1a1a1a] text-[14px]
                            font-medium tracking-wide transition-colors
                            disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Add to Cart
+                {addingToCart ? "Adding..." : "Add to Cart"}
               </button>
             </div>
 
