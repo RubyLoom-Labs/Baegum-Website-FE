@@ -18,3 +18,8 @@ export const getProducts = async (page, product_category_id, filters = {}) => {
   const response = await api.get(`/api/products?${params.toString()}`)
   return response;
 }
+
+export const getProductDetail = async (id) => {
+  const response = await api.get(`/api/products/${id}`)
+  return response;
+}
