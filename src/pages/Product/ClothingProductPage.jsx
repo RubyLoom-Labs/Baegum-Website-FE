@@ -5,6 +5,7 @@ import ReviewSection from "./components/ReviewSection";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { getItems } from "@/services/filterItems";
+import "./ClothingProductPage.css";
 
 import wishlistIcon from "@/assets/icons/wishlist.svg";
 
@@ -375,13 +376,19 @@ export default function ClothingProductPage({ product, categoryId }) {
             {/* Accordions */}
             <div className="mt-8 border-t border-gray-200">
               <AccordionSection title="Details & Features">
-                <p>{product.details}</p>
+                <div 
+                  className="prose prose-sm max-w-none text-[14px] text-gray-700"
+                  dangerouslySetInnerHTML={{ __html: product.details || 'Product details coming soon' }}
+                />
               </AccordionSection>
               <AccordionSection title="Materials">
-                <p>{product.materials}</p>
+                <div 
+                  className="prose prose-sm max-w-none text-[14px] text-gray-700"
+                  dangerouslySetInnerHTML={{ __html: product.materials || 'Material information coming soon' }}
+                />
               </AccordionSection>
               <AccordionSection title="Delivery & Payment">
-                <p>{product.delivery}</p>
+                <p className="text-[14px] text-gray-700">{product.delivery}</p>
               </AccordionSection>
             </div>
           </div>

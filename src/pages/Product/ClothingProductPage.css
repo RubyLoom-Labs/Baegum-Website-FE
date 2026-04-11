@@ -1,0 +1,39 @@
+/* HTML Content Styling */
+.prose h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 16px;
+  margin-bottom: 12px;
+  color: #1a1a1a;
+}
+
+.prose h3:first-child {
+  margin-top: 0;
+}
+
+.prose ul {
+  list-style: disc;
+  margin-left: 24px;
+  margin-bottom: 12px;
+}
+
+.prose ul li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+  color: #555;
+}
+
+.prose ul li strong {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.prose p {
+  margin-bottom: 12px;
+  line-height: 1.6;
+  color: #555;
+}
+
+.prose br {
+  content: '';
+}
