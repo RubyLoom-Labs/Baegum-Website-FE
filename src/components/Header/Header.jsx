@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef } from "react";
 
 import { useCart } from "@/context/CartContext";
@@ -131,10 +131,19 @@ export default function Header() {
 
   const mobileSearchRef = useRef(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const { openCart, count: cartCount } = useCart();
   const { openWishlist } = useWishlist();
-  const { openLogin } = useAuth();
+  const { openLogin, isLoggedIn } = useAuth();
+
+  const handleProfileClick = () => {
+    if (isLoggedIn) {
+      navigate('/profile');
+    } else {
+      openLogin();
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
@@ -188,7 +197,7 @@ export default function Header() {
 
           {/* Right icons */}
           <div className="flex items-center gap-2">
-            <IconButton defaultSrc={userDefault} hoverSrc={userHover} size={19} ariaLabel="Account" onClick={openLogin} />
+            <IconButton defaultSrc={userDefault} hoverSrc={userHover} size={19} ariaLabel="Account" onClick={handleProfileClick} />
             <IconButton defaultSrc={wishlistDefault} hoverSrc={wishlistHover} size={19} ariaLabel="Wishlist" onClick={openWishlist} />
             <IconButton defaultSrc={cartDefault} hoverSrc={cartHover} size={19} ariaLabel="Cart" badge={cartCount} onClick={openCart} />
           </div>
@@ -305,7 +314,7 @@ export default function Header() {
         {/* Profile button */}
         <div className="p-5 border-t border-gray-100">
           <button
-            onClick={openLogin}
+            onClick={handleProfileClick}
             className="w-full py-3 border border-gray-200 bg-gray-100 rounded-md
                hover:bg-gray-200 transition-colors text-sm text-gray-700
                font-medium tracking-wide"

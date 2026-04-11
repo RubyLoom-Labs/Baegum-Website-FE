@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import ProductCard from "@/components/ui/ProductCard";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -318,7 +319,34 @@ const ALL_SECTIONS = [
 ];
 
 export default function ProfilePage() {
-  const [user,         setUser]         = useState(INIT_USER);
+  const navigate = useNavigate();
+  const { user: authUser, isLoggedIn, logout } = useAuth();
+
+  // Redirect to home if not logged in
+  useEffect(() => {
+    if (!isLoggedIn) {
+      navigate('/');
+    }
+  }, [isLoggedIn, navigate]);
+
+  // Initialize user from AuthContext with fallback fields
+  const initialUser = authUser ? {
+    firstName: authUser.full_name?.split(' ')[0] || authUser.name || '',
+    lastName: authUser.full_name?.split(' ').slice(1).join(' ') || '',
+    email: authUser.email || '',
+    phone: '',
+    dob: '',
+    gender: ''
+  } : {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    dob: '',
+    gender: ''
+  };
+
+  const [user,         setUser]         = useState(initialUser);
   const [addresses,    setAddresses]    = useState(INIT_ADDRESSES);
   const [cards,        setCards]        = useState(INIT_CARDS);
   const [showAddAddr,  setShowAddAddr]  = useState(false);
@@ -457,6 +485,19 @@ export default function ProfilePage() {
                         <span className="font-semibold text-[#1a1a1a]">Email:</span>{" "}
                         {user.email}
                       </p>
+                    </div>
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <button
+                        onClick={() => {
+                          logout();
+                          navigate('/');
+                          showToast('Logged out successfully');
+                        }}
+                        className="px-5 py-2 border border-red-300 text-red-600 text-[12px] font-light
+                                 hover:bg-red-50 active:bg-red-100 transition-colors rounded-sm"
+                      >
+                        Logout
+                      </button>
                     </div>
                   </Card>
                 </div>

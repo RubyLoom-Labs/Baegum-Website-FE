@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { loginWithEmail, signupWithEmail, loginWithGoogle } from "@/services/auth";
+import { loginWithEmail, signupWithEmail, loginWithGoogle, requestPasswordReset } from "@/services/auth";
 
 // ── Google icon ───────────────────────────────────────────────────────────────
 const GoogleIcon = () => (
@@ -180,8 +180,15 @@ function LoginForm() {
   return (
     <div className="flex flex-col gap-4">
       {apiError && (
-        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded text-[12px] text-red-600 font-light">
-          {apiError}
+        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded flex items-start gap-2.5">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" className="flex-shrink-0 mt-0.5">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p className="text-[12px] text-red-600 font-light leading-relaxed">
+            {apiError}
+          </p>
         </div>
       )}
 
@@ -335,8 +342,15 @@ function SignupForm() {
   return (
     <div className="flex flex-col gap-4">
       {apiError && (
-        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded text-[12px] text-red-600 font-light">
-          {apiError}
+        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded flex items-start gap-2.5">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" className="flex-shrink-0 mt-0.5">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p className="text-[12px] text-red-600 font-light leading-relaxed">
+            {apiError}
+          </p>
         </div>
       )}
 
@@ -421,6 +435,7 @@ function ForgotForm() {
   const { openLogin } = useAuth();
   const [email,   setEmail]   = useState("");
   const [errors,  setErrors]  = useState({});
+  const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent,    setSent]    = useState(false);
 
@@ -434,11 +449,18 @@ function ForgotForm() {
   const handleSubmit = async () => {
     const e = validate();
     setErrors(e);
+    setApiError("");
     if (Object.keys(e).length) return;
+    
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setLoading(false);
-    setSent(true);
+    try {
+      const response = await requestPasswordReset(email);
+      setLoading(false);
+      setSent(true);
+    } catch (error) {
+      setLoading(false);
+      setApiError(error.message || "Failed to send reset email. Please try again.");
+    }
   };
 
   if (sent) {
@@ -470,6 +492,19 @@ function ForgotForm() {
 
   return (
     <div className="flex flex-col gap-4">
+      {apiError && (
+        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded flex items-start gap-2.5">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" className="flex-shrink-0 mt-0.5">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p className="text-[12px] text-red-600 font-light leading-relaxed">
+            {apiError}
+          </p>
+        </div>
+      )}
+
       <p className="text-[13px] text-gray-500 font-light leading-relaxed">
         Enter your email address and we'll send you a link to reset your password.
       </p>

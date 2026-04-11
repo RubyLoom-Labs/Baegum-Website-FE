@@ -19,7 +19,8 @@ export async function loginWithEmail(email, password) {
     });
     return response;
   } catch (error) {
-    console.error('Login failed:', error);
+    console.error('Login failed:', error.message);
+    // Throw the error with its message preserved
     throw error;
   }
 }
@@ -38,7 +39,7 @@ export async function signupWithEmail(email, password) {
     });
     return response;
   } catch (error) {
-    console.error('Signup failed:', error);
+    console.error('Signup failed:', error.message);
     throw error;
   }
 }
@@ -55,7 +56,7 @@ export async function loginWithGoogle(googleToken) {
     });
     return response;
   } catch (error) {
-    console.error('Google login failed:', error);
+    console.error('Google login failed:', error.message);
     throw error;
   }
 }

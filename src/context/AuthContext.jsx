@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { setCookie, getCookie, removeCookie } from "@/utils/cookies";
 
 const AuthContext = createContext(null);
 
@@ -7,15 +8,23 @@ export function AuthProvider({ children }) {
   const [mode, setMode] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Check if user is logged in on mount (check localStorage for token)
+  // Check if user is logged in on mount (check cookie for token)
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
+    const token = getCookie("authToken");
     const userData = localStorage.getItem("user");
     if (token && userData) {
       setIsLoggedIn(true);
-      setUser(JSON.parse(userData));
+      try {
+        setUser(JSON.parse(userData));
+      } catch (e) {
+        console.error("Error parsing user data:", e);
+        removeCookie("authToken");
+        localStorage.removeItem("user");
+      }
     }
+    setLoading(false);
   }, []);
 
   const openLogin  = () => setMode("login");
@@ -24,16 +33,22 @@ export function AuthProvider({ children }) {
   const closeAuth  = () => setMode(null);
 
   const login = (userData, token) => {
-    localStorage.setItem("authToken", token);
+    // Save token to cookie (expires in 7 days)
+    setCookie("authToken", token, 7);
+    // Save user data to localStorage
     localStorage.setItem("user", JSON.stringify(userData));
+    
     setIsLoggedIn(true);
     setUser(userData);
     closeAuth();
   };
 
   const logout = () => {
-    localStorage.removeItem("authToken");
+    // Clear token from cookie
+    removeCookie("authToken");
+    // Clear user data from localStorage
     localStorage.removeItem("user");
+    
     setIsLoggedIn(false);
     setUser(null);
   };
@@ -43,6 +58,7 @@ export function AuthProvider({ children }) {
       mode, 
       isLoggedIn, 
       user,
+      loading,
       openLogin, 
       openSignup, 
       openForgot, 
