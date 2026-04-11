@@ -87,7 +87,16 @@ async function apiRequest(endpoint, options = {}) {
   // Add authorization token if available
   const token = getAuthToken();
   if (token) {
-    defaultOptions.headers.Authorization = `Bearer ${token}`;
+    const trimmedToken = token.trim();
+    defaultOptions.headers.Authorization = `Bearer ${trimmedToken}`;
+    
+    // Debug logging
+    console.log('🔐 API Request Debug:', {
+      endpoint,
+      tokenLength: trimmedToken.length,
+      tokenStart: trimmedToken.substring(0, 20) + '...',
+      hasToken: !!trimmedToken
+    });
   }
 
   try {

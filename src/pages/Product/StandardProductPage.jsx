@@ -14,7 +14,7 @@ import wishlistIcon from "@/assets/icons/wishlist.svg";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function StandardProductPage({ product, categoryId }) {
-  const { addItem } = useCart();
+  const { addItem, openCart } = useCart();
   const { toggleItem, isWishlisted } = useWishlist();
   const { isLoggedIn, openLogin } = useAuth();
 
@@ -22,6 +22,7 @@ export default function StandardProductPage({ product, categoryId }) {
   const [selectedSize,  setSelectedSize]  = useState(null);
   const [added,         setAdded]         = useState(false);
   const [sizeError,     setSizeError]     = useState(false);
+  const [colorError,    setColorError]    = useState(false);
   const [allSizes,      setAllSizes]      = useState([]);
   const [loadingSizes,  setLoadingSizes]  = useState(false);
 
@@ -180,16 +181,32 @@ export default function StandardProductPage({ product, categoryId }) {
   }, [selectedColorId, selectedSizeId, product]);
 
   const handleAddToCart = () => {
+
     if (!isLoggedIn) {
       openLogin();
       return;
     }
-    if (!selectedSize) { setSizeError(true); return; }
+
+    // Category 2 and 4: Only validate color
+    if (categoryId === 2 || categoryId === 4) {
+      if (!selectedColor) { setColorError(true); return; }
+    }
+    // Category 3: Only validate size
+    else if (categoryId === 3) {
+      if (!selectedSize) { setSizeError(true); return; }
+    }
+    // Other categories: Validate both color and size
+    /* else {
+      if (!selectedColor) { setColorError(true); return; }
+      if (!selectedSize) { setSizeError(true); return; }
+    } */
+
     if (combinationError) {
       // Combination is invalid, don't add to cart
       return;
     }
     setSizeError(false);
+    setColorError(false);
     addItem({
       id: product.id,
       name: product.name,
@@ -199,6 +216,7 @@ export default function StandardProductPage({ product, categoryId }) {
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
+    openCart();
   };
 
   const wishlisted = isWishlisted(product.id);
@@ -292,6 +310,11 @@ export default function StandardProductPage({ product, categoryId }) {
               </div>
             )}
 
+            {/* Color error message */}
+            {colorError && (
+              <p className="text-[11px] text-red-500 mt-1.5">Please select a color</p>
+            )}
+
             {/* Size selector */}
             {allSizes && allSizes.length > 0 && (
               <div className="mt-5">
@@ -363,7 +386,6 @@ export default function StandardProductPage({ product, categoryId }) {
             <div className="flex flex-col gap-3 mt-8">
               <button
                 onClick={handleAddToCart}
-                disabled={combinationError ? true : false}
                 className="w-full py-4 bg-[#1a1a1a] hover:bg-gray-800 active:bg-gray-700
                            text-white text-[14px] font-medium tracking-wide transition-colors
                            disabled:opacity-50 disabled:cursor-not-allowed"
@@ -372,7 +394,6 @@ export default function StandardProductPage({ product, categoryId }) {
               </button>
               <button
                 onClick={handleAddToCart}
-                disabled={combinationError ? true : false}
                 className="w-full py-4 border border-gray-300 hover:border-[#1a1a1a]
                            hover:bg-gray-50 active:bg-gray-100 text-[#1a1a1a] text-[14px]
                            font-medium tracking-wide transition-colors

@@ -1,16 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '@/context/CartContext'
+import { getUserAddresses, createUserAddress } from '@/services/user'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SAMPLE DATA — replace with real user data from API/context
 // ─────────────────────────────────────────────────────────────────────────────
-
-const SAMPLE_ADDRESSES = [
-  { id: 1, isDefault: true,  name: 'Daniel Rodriguez', address: '34/B, Wanatha road, Maharagama. Western - Colombo - Greater - Maharagama', phone: '(+94) 713531297' },
-  { id: 2, isDefault: false, name: 'Olivia Johnson',   address: '12/A, Temple Lane, Nugegoda Western – Colombo – Greater – Nugegoda',        phone: '(+94) 712345678' },
-  { id: 3, isDefault: false, name: 'Olivia Johnson',   address: '78/D, Rose Garden Street, Dehiwala – Western – Colombo – Greater – Dehiwala', phone: '(+94) 712345678' },
-]
 
 const SAMPLE_CARDS = [
   { id: 1, isDefault: true,  name: 'Daniel Rodriguez', number: '•••• •••• •••• 1234', expiry: '12/03', brand: 'VISA' },
@@ -52,14 +47,14 @@ const CardTitle = ({ title }) => (
   <p className="text-[13px] font-semibold text-[#1a1a1a] tracking-wide mb-4">{title}</p>
 )
 
-const Field = ({ label, placeholder, type = 'text', value, onChange, half }) => (
+const Field = ({ label, placeholder, type = 'text', value, onChange, half, disabled = false }) => (
   <div className={half ? 'flex-1' : 'w-full'}>
     {label && <p className="text-[11px] text-gray-500 font-light mb-1 tracking-wide">{label}</p>}
     <input
-      type={type} placeholder={placeholder} value={value} onChange={onChange}
+      type={type} placeholder={placeholder} value={value} onChange={onChange} disabled={disabled}
       className="w-full border border-gray-300 rounded px-4 py-2.5 text-[13px]
                  text-[#1a1a1a] placeholder-gray-400 font-light outline-none
-                 focus:border-gray-500 transition-colors"
+                 focus:border-gray-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
     />
   </div>
 )
@@ -78,59 +73,131 @@ const BtnOutline = ({ label, onClick, small }) => (
 // ADD ADDRESS MINI FORM (inline, no modal)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function AddAddressForm({ onSave, onCancel }) {
-  const [form, setForm] = useState({ fullName:'', phone:'', street:'', city:'', state:'', country:'', postal:'' })
+function AddAddressForm({ onSave, onCancel, isLoading = false }) {
+  const [form, setForm] = useState({ 
+    label: '',
+    street1: '', 
+    street2: '',
+    city: '', 
+    district: '', 
+    province: '', 
+    postal_code: ''
+  })
   const [errors, setErrors] = useState({})
+  const [isSaving, setIsSaving] = useState(false)
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }))
 
   const validate = () => {
     const e = {}
-    if (!form.fullName.trim()) e.fullName = 'Required'
-    if (!form.phone.trim())    e.phone    = 'Required'
-    if (!form.street.trim())   e.street   = 'Required'
-    if (!form.city.trim())     e.city     = 'Required'
-    if (!form.country.trim())  e.country  = 'Required'
+    if (!form.label.trim())     e.label = 'Address label required'
+    if (!form.street1.trim())   e.street1 = 'Street address required'
+    if (!form.city.trim())      e.city = 'City required'
+    if (!form.district.trim())  e.district = 'District required'
+    if (!form.province.trim())  e.province = 'Province required'
     return e
   }
 
-  const handleSave = () => {
-    const e = validate(); setErrors(e)
+  const handleSave = async () => {
+    const e = validate()
+    setErrors(e)
     if (Object.keys(e).length) return
-    onSave({ id: Date.now(), isDefault: false, name: form.fullName, address: `${form.street}, ${form.city}, ${form.state}, ${form.country} ${form.postal}`, phone: form.phone })
+
+    setIsSaving(true)
+    try {
+      // Create address_detail object
+      const addressData = {
+        address_detail: {
+          label: form.label,
+          street1: form.street1,
+          street2: form.street2,
+          city: form.city,
+          district: form.district,
+          province: form.province,
+          postal_code: form.postal_code,
+          status: 'active'
+        },
+        status: 'active'
+      }
+
+      // Call API to create address
+      const result = await createUserAddress(addressData)
+      
+      // Format response for display
+      const formattedAddress = {
+        id: result.id,
+        name: form.label,
+        address: `${form.street1}${form.street2 ? ', ' + form.street2 : ''}, ${form.city}, ${form.district}, ${form.province}`,
+        phone: 'N/A',
+        isDefault: false,
+        province: form.province,
+        district: form.district,
+        city: form.city,
+        street1: form.street1,
+        street2: form.street2,
+        postal_code: form.postal_code,
+        label: form.label
+      }
+      
+      onSave(formattedAddress)
+    } catch (error) {
+      console.error('Failed to save address:', error)
+      setErrors({ submit: error.message || 'Failed to save address' })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
     <div className="border border-gray-200 rounded-sm p-5 mt-3 bg-gray-50">
       <p className="text-[13px] font-semibold text-[#1a1a1a] mb-4">Add New Address</p>
+      {errors.submit && <p className="text-[11px] text-red-500 mb-3">{errors.submit}</p>}
       <div className="flex flex-col gap-3">
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <Field placeholder="Full Name"    value={form.fullName} onChange={set('fullName')} half />
-            {errors.fullName && <p className="text-[10px] text-red-500 mt-1">{errors.fullName}</p>}
-          </div>
-          <div className="flex-1">
-            <Field placeholder="Phone Number" value={form.phone}    onChange={set('phone')}    half />
-            {errors.phone && <p className="text-[10px] text-red-500 mt-1">{errors.phone}</p>}
-          </div>
+        {/* Address Label */}
+        <div>
+          <Field placeholder="Address Label (e.g., Home, Office)" value={form.label} onChange={set('label')} disabled={isSaving} />
+          {errors.label && <p className="text-[10px] text-red-500 mt-1">{errors.label}</p>}
+        </div>
+        
+        {/* Street Addresses */}
+        <div>
+          <Field placeholder="Street Address 1" value={form.street1} onChange={set('street1')} disabled={isSaving} />
+          {errors.street1 && <p className="text-[10px] text-red-500 mt-1">{errors.street1}</p>}
         </div>
         <div>
-          <Field placeholder="Street Address" value={form.street}  onChange={set('street')} />
-          {errors.street && <p className="text-[10px] text-red-500 mt-1">{errors.street}</p>}
+          <Field placeholder="Street Address 2 (Optional)" value={form.street2} onChange={set('street2')} disabled={isSaving} />
         </div>
+        
+        {/* City and District */}
         <div className="flex gap-3">
-          <Field placeholder="City"           value={form.city}    onChange={set('city')}    half />
-          <Field placeholder="State/Province" value={form.state}   onChange={set('state')}   half />
+          <div className="flex-1">
+            <Field placeholder="City" value={form.city} onChange={set('city')} half disabled={isSaving} />
+            {errors.city && <p className="text-[10px] text-red-500 mt-1">{errors.city}</p>}
+          </div>
+          <div className="flex-1">
+            <Field placeholder="District" value={form.district} onChange={set('district')} half disabled={isSaving} />
+            {errors.district && <p className="text-[10px] text-red-500 mt-1">{errors.district}</p>}
+          </div>
         </div>
+        
+        {/* Province and Postal Code */}
         <div className="flex gap-3">
-          <Field placeholder="Country"        value={form.country} onChange={set('country')} half />
-          <Field placeholder="Postal Code"    value={form.postal}  onChange={set('postal')}  half />
+          <div className="flex-1">
+            <Field placeholder="Province" value={form.province} onChange={set('province')} half disabled={isSaving} />
+            {errors.province && <p className="text-[10px] text-red-500 mt-1">{errors.province}</p>}
+          </div>
+          <div className="flex-1">
+            <Field placeholder="Postal Code" value={form.postal_code} onChange={set('postal_code')} half disabled={isSaving} />
+          </div>
         </div>
+        
+        {/* Buttons */}
         <div className="flex gap-2 mt-1">
           <BtnOutline label="Cancel" onClick={onCancel} />
-          <button onClick={handleSave}
+          <button onClick={handleSave} disabled={isSaving}
             className="px-5 py-2 bg-[#1a1a1a] hover:bg-gray-800 text-white text-[12px]
-                       font-medium tracking-wide transition-colors rounded-sm">
-            Save Address
+                       font-medium tracking-wide transition-colors rounded-sm
+                       disabled:opacity-50 disabled:cursor-not-allowed">
+            {isSaving ? 'Saving...' : 'Save Address'}
           </button>
         </div>
       </div>
@@ -146,9 +213,11 @@ export default function CheckoutPage() {
   const navigate = useNavigate()
   const { items, total, closeCart } = useCart()
 
-  const [addresses,        setAddresses]        = useState(SAMPLE_ADDRESSES)
-  const [selectedAddressId, setSelectedAddressId] = useState(SAMPLE_ADDRESSES.find(a => a.isDefault)?.id || 1)
-  const [showAddAddress,   setShowAddAddress]   = useState(false)
+  const [addresses,         setAddresses]         = useState([])
+  const [selectedAddressId,  setSelectedAddressId] = useState(null)
+  const [showAddAddress,    setShowAddAddress]    = useState(false)
+  const [loadingAddresses,  setLoadingAddresses]  = useState(true)
+  const [addressError,      setAddressError]      = useState(null)
 
   // Payment: 'cod' | 'card'
   const [paymentMethod,    setPaymentMethod]    = useState('cod')
@@ -161,7 +230,65 @@ export default function CheckoutPage() {
   const shippingFee = 350
   const orderTotal  = total + shippingFee
 
+  // Fetch user addresses on component mount
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      try {
+        setLoadingAddresses(true)
+        setAddressError(null)
+        const response = await getUserAddresses()
+        
+        // Handle paginated response: response.data.data is the array
+        // or response.data could be direct array, or response could be direct
+        let addressList = []
+        if (response.data && Array.isArray(response.data.data)) {
+          addressList = response.data.data // Paginated response
+        } else if (response.data && Array.isArray(response.data)) {
+          addressList = response.data // Direct array in data
+        } else if (Array.isArray(response)) {
+          addressList = response // Direct array
+        }
+        
+        // Format addresses from API response
+        const formattedAddresses = addressList.map(addr => {
+          const detail = addr.address_detail || {}
+          return {
+            id: addr.id,
+            name: detail.label || 'My Address',
+            address: `${detail.street1}${detail.street2 ? ', ' + detail.street2 : ''}, ${detail.city}, ${detail.district}, ${detail.province}`,
+            phone: addr.phone || 'N/A',
+            isDefault: addr.status === 'active' || false,
+            // Store original data for updates
+            province: detail.province,
+            district: detail.district,
+            city: detail.city,
+            street1: detail.street1,
+            street2: detail.street2,
+            postal_code: detail.postal_code,
+            label: detail.label
+          }
+        })
+        
+        setAddresses(formattedAddresses)
+        
+        // Set default address or first address
+        const defaultAddress = formattedAddresses.find(a => a.isDefault)
+        setSelectedAddressId(defaultAddress?.id || formattedAddresses[0]?.id || null)
+      } catch (error) {
+        console.error('Failed to fetch addresses:', error)
+        setAddressError(error.message || 'Failed to load addresses')
+        setAddresses([])
+        setSelectedAddressId(null)
+      } finally {
+        setLoadingAddresses(false)
+      }
+    }
+
+    fetchAddresses()
+  }, [])
+
   const handleAddAddress = (newAddr) => {
+    // newAddr is already formatted by AddAddressForm
     setAddresses(prev => [...prev, newAddr])
     setSelectedAddressId(newAddr.id)
     setShowAddAddress(false)
@@ -211,54 +338,78 @@ export default function CheckoutPage() {
             <Card>
               <CardTitle title="Delivery Address" />
 
+              {/* Loading state */}
+              {loadingAddresses && (
+                <p className="text-[13px] text-gray-500 font-light py-8">Loading your addresses...</p>
+              )}
+
+              {/* Error state */}
+              {addressError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-sm mb-4">
+                  <p className="text-[12px] text-red-600 font-light">{addressError}</p>
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!loadingAddresses && addresses.length === 0 && !addressError && (
+                <p className="text-[13px] text-gray-500 font-light py-4">No addresses saved yet. Add one below.</p>
+              )}
+
               {/* Address options */}
-              <div className="flex flex-col gap-2">
-                {addresses.map((addr) => {
-                  const isSelected = addr.id === selectedAddressId
-                  return (
-                    <label key={addr.id}
-                      className={`flex items-start gap-3 p-4 border rounded-sm cursor-pointer transition-colors
-                        ${isSelected ? 'border-[#1a1a1a] bg-gray-50' : 'border-gray-200 hover:border-gray-400'}`}>
-                      {/* Radio */}
-                      <div className="mt-0.5 flex-shrink-0">
-                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors
-                          ${isSelected ? 'border-[#1a1a1a]' : 'border-gray-300'}`}>
-                          {isSelected && <div className="w-2 h-2 rounded-full bg-[#1a1a1a]" />}
+              {addresses.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {addresses.map((addr) => {
+                    const isSelected = addr.id === selectedAddressId
+                    return (
+                      <label key={addr.id}
+                        className={`flex items-start gap-3 p-4 border rounded-sm cursor-pointer transition-colors
+                          ${isSelected ? 'border-[#1a1a1a] bg-gray-50' : 'border-gray-200 hover:border-gray-400'}`}>
+                        {/* Radio */}
+                        <div className="mt-0.5 flex-shrink-0">
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors
+                            ${isSelected ? 'border-[#1a1a1a]' : 'border-gray-300'}`}>
+                            {isSelected && <div className="w-2 h-2 rounded-full bg-[#1a1a1a]" />}
+                          </div>
                         </div>
-                      </div>
-                      <input type="radio" name="address" value={addr.id}
-                        checked={isSelected} onChange={() => setSelectedAddressId(addr.id)}
-                        className="sr-only" />
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-[13px] font-medium text-[#1a1a1a]">{addr.name}</p>
-                          {addr.isDefault && (
-                            <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-light">
-                              Default
-                            </span>
+                        <input type="radio" name="address" value={addr.id}
+                          checked={isSelected} onChange={() => setSelectedAddressId(addr.id)}
+                          className="sr-only" />
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-[13px] font-medium text-[#1a1a1a]">{addr.name}</p>
+                            {addr.isDefault && (
+                              <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-light">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[12px] text-gray-500 font-light mt-0.5 leading-relaxed">{addr.address}</p>
+                          {addr.postal_code && (
+                            <p className="text-[12px] text-gray-500 font-light">Postal Code: {addr.postal_code}</p>
                           )}
                         </div>
-                        <p className="text-[12px] text-gray-500 font-light mt-0.5 leading-relaxed">{addr.address}</p>
-                        <p className="text-[12px] text-gray-500 font-light">{addr.phone}</p>
-                      </div>
-                    </label>
-                  )
-                })}
-              </div>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
 
               {/* Add address */}
               {!showAddAddress ? (
                 <button
                   onClick={() => setShowAddAddress(true)}
+                  disabled={loadingAddresses}
                   className="mt-4 border border-gray-300 text-[#1a1a1a] text-[12px] font-light
-                             px-4 py-2 hover:border-[#1a1a1a] hover:bg-gray-50 transition-colors rounded-sm">
+                             px-4 py-2 hover:border-[#1a1a1a] hover:bg-gray-50 transition-colors
+                             rounded-sm disabled:opacity-50 disabled:cursor-not-allowed">
                   + Add New Address
                 </button>
               ) : (
                 <AddAddressForm
                   onSave={handleAddAddress}
                   onCancel={() => setShowAddAddress(false)}
+                  isLoading={loadingAddresses}
                 />
               )}
             </Card>
@@ -284,19 +435,24 @@ export default function CheckoutPage() {
               </label>
 
               {/* Card */}
-              <label className={`flex items-center gap-3 p-4 border rounded-sm cursor-pointer transition-colors
-                ${paymentMethod === 'card' ? 'border-[#1a1a1a] bg-gray-50' : 'border-gray-200 hover:border-gray-400'}`}>
+              <label className={`flex items-center gap-3 p-4 border rounded-sm transition-colors
+                ${paymentMethod === 'card' ? 'border-[#1a1a1a] bg-gray-50' : 'border-gray-200'} 
+                opacity-50 cursor-not-allowed`}>
                 <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0
                   ${paymentMethod === 'card' ? 'border-[#1a1a1a]' : 'border-gray-300'}`}>
                   {paymentMethod === 'card' && <div className="w-2 h-2 rounded-full bg-[#1a1a1a]" />}
                 </div>
                 <input type="radio" name="payment" value="card"
-                  checked={paymentMethod === 'card'} onChange={() => setPaymentMethod('card')}
+                  checked={paymentMethod === 'card'} onChange={() => {}} 
+                  disabled
                   className="sr-only" />
                 <div>
                   <p className="text-[13px] font-medium text-[#1a1a1a]">Pay by Card</p>
                   <p className="text-[12px] text-gray-500 font-light">Credit or Debit card</p>
                 </div>
+                <span className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-light ml-auto flex-shrink-0">
+                  Coming Soon
+                </span>
               </label>
 
               {/* Card selector — shows only when card is selected */}
@@ -394,7 +550,9 @@ export default function CheckoutPage() {
                     </p>
                     <p className="text-[12px] font-medium text-[#1a1a1a]">{selectedAddress.name}</p>
                     <p className="text-[11px] text-gray-500 font-light leading-relaxed">{selectedAddress.address}</p>
-                    <p className="text-[11px] text-gray-500 font-light">{selectedAddress.phone}</p>
+                    {selectedAddress.postal_code && (
+                      <p className="text-[11px] text-gray-500 font-light">Postal Code: {selectedAddress.postal_code}</p>
+                    )}
                   </div>
                 )}
 

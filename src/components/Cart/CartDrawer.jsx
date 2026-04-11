@@ -1,5 +1,5 @@
 import { useCart } from "@/context/CartContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
@@ -90,6 +90,7 @@ function CartItem({ item }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function CartDrawer() {
+  const navigate = useNavigate();
   const { cartOpen, closeCart, items, total, count } = useCart();
   const isEmpty = items.length === 0;
 
@@ -111,12 +112,14 @@ export default function CartDrawer() {
 
       {/* ── Drawer panel — z-[49] sits above backdrop ───────────── */}
       <div
-        className={`fixed top-0 right-0 bottom-0 bg-white flex flex-col
+        className="fixed top-0 right-0 bottom-0 bg-white flex flex-col
                     transition-transform duration-300 ease-out
                     /* Mobile: full screen */ w-full
-                    /* Desktop: right panel */ md:w-[500px]
-                    ${cartOpen ? "translate-x-0" : "translate-x-full"}`}
-        style={{ zIndex: 52 }}
+                    /* Desktop: right panel */ md:w-[500px]"
+        style={{
+          zIndex: 52,
+          transform: cartOpen ? "translateX(0)" : "translateX(100%)",
+        }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
