@@ -62,5 +62,5 @@ export default function ProductPage() {
     return <ClothingProductPage product={product} categoryId={product.categoryId} />;
   }
 
-  return <StandardProductPage product={product} />;
+  return <StandardProductPage product={product} categoryId={product.categoryId} />;
 }

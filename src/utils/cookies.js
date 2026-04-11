@@ -12,7 +12,7 @@
 export function setCookie(name, value, days = 7) {
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  
+
   const cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
   document.cookie = cookieString;
 }
@@ -25,7 +25,7 @@ export function setCookie(name, value, days = 7) {
 export function getCookie(name) {
   const nameEQ = encodeURIComponent(name) + "=";
   const cookies = document.cookie.split(';');
-  
+
   for (let i = 0; i < cookies.length; i++) {
     let cookie = cookies[i].trim();
     if (cookie.indexOf(nameEQ) === 0) {

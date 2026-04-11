@@ -47,7 +47,7 @@ function getErrorMessage(status, statusText, data) {
     if (typeof firstError === 'string') return firstError;
     if (Array.isArray(firstError) && firstError.length > 0) return firstError[0];
   }
-  
+
   // Fall back to status-based messages
   switch (status) {
     case 400:
@@ -112,7 +112,7 @@ async function apiRequest(endpoint, options = {}) {
       console.error('API Error caught:', error.message);
       throw error;
     }
-    
+
     // For other errors, wrap them with a user-friendly message
     console.error('Request Error:', error);
     throw new Error(error.message || 'Something went wrong. Please try again.');

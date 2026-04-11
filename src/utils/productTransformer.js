@@ -103,9 +103,12 @@ export const transformProductData = (apiProduct) => {
     variants: variants,
     productVariants: product.product_variants || [],
     // Add default details if not provided
+    description: product.description || 'Product details coming soon',
     details: product.description || 'Product details coming soon',
+    material_description: product.material_description || 'Material information coming soon',
     materials: product.material_description || 'Material information coming soon',
-    ingredients: 'Ingredients information coming soon',
+    ingredient_description: product.ingredient_description || 'Ingredient information coming soon',
+    ingredients: product.ingredient_description || 'Ingredient information coming soon',
     delivery: 'Free delivery on orders over Rs. 5000. Standard delivery 3–5 working days. Express delivery available at checkout.',
   };
 };

@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
     setCookie("authToken", token, 7);
     // Save user data to localStorage
     localStorage.setItem("user", JSON.stringify(userData));
-    
+
     setIsLoggedIn(true);
     setUser(userData);
     closeAuth();
@@ -48,20 +48,20 @@ export function AuthProvider({ children }) {
     removeCookie("authToken");
     // Clear user data from localStorage
     localStorage.removeItem("user");
-    
+
     setIsLoggedIn(false);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      mode, 
-      isLoggedIn, 
+    <AuthContext.Provider value={{
+      mode,
+      isLoggedIn,
       user,
       loading,
-      openLogin, 
-      openSignup, 
-      openForgot, 
+      openLogin,
+      openSignup,
+      openForgot,
       closeAuth,
       login,
       logout

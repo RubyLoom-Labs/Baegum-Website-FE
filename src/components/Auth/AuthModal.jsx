@@ -131,7 +131,7 @@ function LoginForm() {
     try {
       const response = await loginWithEmail(email, password);
       setLoading(false);
-      
+
       if (response.data && response.data.token) {
         // Call the login method from context with user data and token
         login(response.data.user || { email }, response.data.token);
@@ -156,7 +156,7 @@ function LoginForm() {
             setLoading(true);
             const loginResponse = await loginWithGoogle(response.credential);
             setLoading(false);
-            
+
             if (loginResponse.data && loginResponse.data.token) {
               login(loginResponse.data.user || { email: loginResponse.data.email }, loginResponse.data.token);
               setSuccess(true);
@@ -295,7 +295,7 @@ function SignupForm() {
     try {
       const response = await signupWithEmail(email, password);
       setLoading(false);
-      
+
       if (response.data && response.data.token) {
         // Call the login method from context with user data and token
         login(response.data.user || { email }, response.data.token);
@@ -319,7 +319,7 @@ function SignupForm() {
             setLoading(true);
             const loginResponse = await loginWithGoogle(response.credential);
             setLoading(false);
-            
+
             if (loginResponse.data && loginResponse.data.token) {
               login(loginResponse.data.user || { email: loginResponse.data.email }, loginResponse.data.token);
               setTimeout(() => closeAuth(), 500);
@@ -451,7 +451,7 @@ function ForgotForm() {
     setErrors(e);
     setApiError("");
     if (Object.keys(e).length) return;
-    
+
     setLoading(true);
     try {
       const response = await requestPasswordReset(email);
