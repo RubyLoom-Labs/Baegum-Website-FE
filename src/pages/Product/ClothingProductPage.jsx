@@ -4,6 +4,7 @@ import AccordionSection from "./components/AccordionSection";
 import ReviewSection from "./components/ReviewSection";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
+import { useAuth } from "@/context/AuthContext";
 import { getItems } from "@/services/filterItems";
 import "./ClothingProductPage.css";
 
@@ -16,6 +17,7 @@ import wishlistIcon from "@/assets/icons/wishlist.svg";
 export default function ClothingProductPage({ product, categoryId }) {
   const { addItem } = useCart();
   const { toggleItem, isWishlisted } = useWishlist();
+  const { isLoggedIn, openLogin } = useAuth();
 
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize,  setSelectedSize]  = useState(null);
@@ -179,6 +181,10 @@ export default function ClothingProductPage({ product, categoryId }) {
   }, [selectedColorId, selectedSizeId, product]);
 
   const handleAddToCart = () => {
+    if (!isLoggedIn) {
+      openLogin();
+      return;
+    }
     if (!selectedSize) { setSizeError(true); return; }
     if (combinationError) {
       // Combination is invalid, don't add to cart
@@ -376,13 +382,13 @@ export default function ClothingProductPage({ product, categoryId }) {
             {/* Accordions */}
             <div className="mt-8 border-t border-gray-200">
               <AccordionSection title="Details & Features">
-                <div 
+                <div
                   className="prose prose-sm max-w-none text-[14px] text-gray-700"
                   dangerouslySetInnerHTML={{ __html: product.details || 'Product details coming soon' }}
                 />
               </AccordionSection>
               <AccordionSection title="Materials">
-                <div 
+                <div
                   className="prose prose-sm max-w-none text-[14px] text-gray-700"
                   dangerouslySetInnerHTML={{ __html: product.materials || 'Material information coming soon' }}
                 />
@@ -395,7 +401,7 @@ export default function ClothingProductPage({ product, categoryId }) {
         </div>
 
         {/* ── Reviews ────────────────────────────────────────────── */}
-        <ReviewSection />
+        <ReviewSection isLoggedIn={isLoggedIn} openLogin={openLogin} />
       </div>
     </div>
   );

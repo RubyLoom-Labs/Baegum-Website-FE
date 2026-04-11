@@ -130,7 +130,7 @@ function ReviewCard({ review }) {
 }
 
 // ── Comment / Review form ─────────────────────────────────────────────────────
-function ReviewForm({ onSubmit }) {
+function ReviewForm({ onSubmit, isLoggedIn, openLogin }) {
   const [rating,  setRating]  = useState(0);
   const [comment, setComment] = useState("");
   const [name,    setName]    = useState("");
@@ -150,6 +150,10 @@ function ReviewForm({ onSubmit }) {
   };
 
   const handleSubmit = async () => {
+    if (!isLoggedIn) {
+      openLogin();
+      return;
+    }
     const e = validate();
     setErrors(e);
     if (Object.keys(e).length) return;
@@ -251,7 +255,7 @@ function ReviewForm({ onSubmit }) {
 // REVIEW SECTION — main export
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function ReviewSection({ reviews = SAMPLE_REVIEWS, avgRating = 4.9 }) {
+export default function ReviewSection({ reviews = SAMPLE_REVIEWS, avgRating = 4.9, isLoggedIn = false, openLogin }) {
   return (
     <section className="mt-12 pt-8 border-t border-gray-200">
 
@@ -277,7 +281,7 @@ export default function ReviewSection({ reviews = SAMPLE_REVIEWS, avgRating = 4.
         <h3 className="text-[16px] font-medium text-[#1a1a1a] mb-4 tracking-wide">
           Write a Review
         </h3>
-        <ReviewForm />
+        <ReviewForm isLoggedIn={isLoggedIn} openLogin={openLogin} />
       </div>
     </section>
   );

@@ -4,6 +4,7 @@ import AccordionSection from "./components/AccordionSection";
 import ReviewSection from "./components/ReviewSection";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
+import { useAuth } from "@/context/AuthContext";
 
 import wishlistIcon from "@/assets/icons/wishlist.svg";
 
@@ -14,6 +15,7 @@ import wishlistIcon from "@/assets/icons/wishlist.svg";
 export default function StandardProductPage({ product }) {
   const { addItem } = useCart();
   const { toggleItem, isWishlisted } = useWishlist();
+  const { isLoggedIn, openLogin } = useAuth();
 
   // Selected variant state
   const [selected, setSelected] = useState(
@@ -25,6 +27,10 @@ export default function StandardProductPage({ product }) {
     setSelected((prev) => ({ ...prev, [group]: value }));
 
   const handleAddToCart = () => {
+    if (!isLoggedIn) {
+      openLogin();
+      return;
+    }
     addItem({
       id: product.id,
       name: product.name,
@@ -142,7 +148,7 @@ export default function StandardProductPage({ product }) {
         </div>
 
         {/* ── Reviews ────────────────────────────────────────────── */}
-        <ReviewSection />
+        <ReviewSection isLoggedIn={isLoggedIn} openLogin={openLogin} />
       </div>
     </div>
   );
