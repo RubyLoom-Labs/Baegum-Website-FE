@@ -4,17 +4,7 @@ const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
   const [cartOpen, setCartOpen] = useState(false);
-  const [items, setItems] = useState([
-    // Sample item — remove when connected to backend
-    {
-      id: 1,
-      name: "Oatmeal V-Neck Dress",
-      variant: "L / Red color",
-      price: 0,
-      image: null,
-      qty: 1,
-    },
-  ]);
+  const [items, setItems] = useState([]);
 
   const openCart  = () => setCartOpen(true);
   const closeCart = () => setCartOpen(false);
