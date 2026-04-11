@@ -7,6 +7,13 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 const API_TIMEOUT = import.meta.env.VITE_API_TIMEOUT || 10000
 
 /**
+ * Get authorization token from localStorage
+ */
+function getAuthToken() {
+  return localStorage.getItem('authToken');
+}
+
+/**
  * Make an API request
  * @param {string} endpoint - API endpoint
  * @param {object} options - Fetch options
@@ -19,6 +26,12 @@ async function apiRequest(endpoint, options = {}) {
       'Content-Type': 'application/json',
     },
     timeout: API_TIMEOUT,
+  }
+
+  // Add authorization token if available
+  const token = getAuthToken();
+  if (token) {
+    defaultOptions.headers.Authorization = `Bearer ${token}`;
   }
 
   try {

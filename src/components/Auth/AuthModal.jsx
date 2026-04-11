@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { loginWithEmail, signupWithEmail, loginWithGoogle } from "@/services/auth";
 
 // ── Google icon ───────────────────────────────────────────────────────────────
 const GoogleIcon = () => (
@@ -103,7 +104,7 @@ function Input({ label, type = "text", value, onChange, error, placeholder, righ
 // ─────────────────────────────────────────────────────────────────────────────
 
 function LoginForm() {
-  const { openSignup, openForgot, closeAuth } = useAuth();
+  const { openSignup, openForgot, closeAuth, login } = useAuth();
   const [email,       setEmail]       = useState("");
   const [password,    setPassword]    = useState("");
   const [showPw,      setShowPw]      = useState(false);
@@ -127,13 +128,53 @@ function LoginForm() {
     if (Object.keys(e).length) return;
 
     setLoading(true);
-    // TODO: replace with real API call
-    await new Promise((r) => setTimeout(r, 1000));
-    setLoading(false);
+    try {
+      const response = await loginWithEmail(email, password);
+      setLoading(false);
+      
+      if (response.data && response.data.token) {
+        // Call the login method from context with user data and token
+        login(response.data.user || { email }, response.data.token);
+        setSuccess(true);
+        setTimeout(() => closeAuth(), 500);
+      } else {
+        setApiError(response.message || "Login failed. Please try again.");
+      }
+    } catch (error) {
+      setLoading(false);
+      setApiError(error.message || "Invalid email or password. Please try again.");
+    }
+  };
 
-    // Simulate wrong credentials
-    setApiError("Invalid email or password. Please try again.");
-    // On success: setSuccess(true); then closeAuth();
+  const handleGoogleLogin = () => {
+    // Initialize Google Sign-In
+    if (typeof window.google !== 'undefined') {
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        callback: async (response) => {
+          try {
+            setLoading(true);
+            const loginResponse = await loginWithGoogle(response.credential);
+            setLoading(false);
+            
+            if (loginResponse.data && loginResponse.data.token) {
+              login(loginResponse.data.user || { email: loginResponse.data.email }, loginResponse.data.token);
+              setSuccess(true);
+              setTimeout(() => closeAuth(), 500);
+            } else {
+              setApiError(loginResponse.message || "Google login failed. Please try again.");
+            }
+          } catch (error) {
+            setLoading(false);
+            setApiError(error.message || "Google login failed. Please try again.");
+          }
+        },
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById('google-signin-btn'),
+        { theme: 'outline', size: 'large' }
+      );
+    }
   };
 
   return (
@@ -199,6 +240,7 @@ function LoginForm() {
       </div>
 
       <button
+        onClick={handleGoogleLogin}
         className="w-full flex items-center justify-center gap-2.5 py-3 border border-gray-300
                    hover:bg-gray-100 active:bg-gray-200 transition-colors rounded text-[13px]
                    text-gray-700 font-light"
@@ -215,7 +257,7 @@ function LoginForm() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function SignupForm() {
-  const { openLogin, closeAuth } = useAuth();
+  const { openLogin, closeAuth, login } = useAuth();
   const [email,       setEmail]       = useState("");
   const [password,    setPassword]    = useState("");
   const [confirm,     setConfirm]     = useState("");
@@ -243,10 +285,51 @@ function SignupForm() {
     if (Object.keys(e).length) return;
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setLoading(false);
-    // TODO: replace with real API call
-    // On success: closeAuth();
+    try {
+      const response = await signupWithEmail(email, password);
+      setLoading(false);
+      
+      if (response.data && response.data.token) {
+        // Call the login method from context with user data and token
+        login(response.data.user || { email }, response.data.token);
+        setTimeout(() => closeAuth(), 500);
+      } else {
+        setApiError(response.message || "Signup failed. Please try again.");
+      }
+    } catch (error) {
+      setLoading(false);
+      setApiError(error.message || "Signup failed. Please try again.");
+    }
+  };
+
+  const handleGoogleSignup = () => {
+    // Initialize Google Sign-In for signup
+    if (typeof window.google !== 'undefined') {
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        callback: async (response) => {
+          try {
+            setLoading(true);
+            const loginResponse = await loginWithGoogle(response.credential);
+            setLoading(false);
+            
+            if (loginResponse.data && loginResponse.data.token) {
+              login(loginResponse.data.user || { email: loginResponse.data.email }, loginResponse.data.token);
+              setTimeout(() => closeAuth(), 500);
+            } else {
+              setApiError(loginResponse.message || "Google signup failed. Please try again.");
+            }
+          } catch (error) {
+            setLoading(false);
+            setApiError(error.message || "Google signup failed. Please try again.");
+          }
+        },
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById('google-signup-btn'),
+        { theme: 'outline', size: 'large' }
+      );
+    }
   };
 
   return (
@@ -318,6 +401,7 @@ function SignupForm() {
       </div>
 
       <button
+        onClick={handleGoogleSignup}
         className="w-full flex items-center justify-center gap-2.5 py-3 border border-gray-300
                    hover:bg-gray-100 active:bg-gray-300 transition-colors rounded text-[13px]
                    text-gray-700 font-light"
