@@ -1,9 +1,36 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 import ProductCard from "@/components/ui/ProductCard";
 import { getUserAddresses, createUserAddress, setDefaultAddress, deleteUserAddress, updateUserProfile, getUserProfile, getCurrentOrders, cancelOrder } from "@/services/user";
 import { getProductDetail, getProductVariantDetail } from "@/services/product";
+import { getWishlistItems } from "@/services/wishlist";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER FUNCTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Convert category name to URL slug
+ * Maps: "Clothing" → "clothing", "Bath & Body" → "bath-body", etc.
+ */
+const getCategorySlug = (categoryName) => {
+  if (!categoryName) return 'products';
+  
+  const categoryMap = {
+    'clothing': 'clothing',
+    'makeup': 'makeup',
+    'fragrance': 'fragrance',
+    'bath & body': 'bath-body',
+    'bath body': 'bath-body',
+    'skincare': 'skincare',
+    'skincare products': 'skincare',
+  };
+
+  const slug = categoryMap[categoryName.toLowerCase().trim()];
+  return slug || categoryName.toLowerCase().replace(/\s+/g, '-');
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SAMPLE DATA
@@ -471,6 +498,7 @@ const ALL_SECTIONS = [
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user: authUser, isLoggedIn, logout } = useAuth();
+  const { addItem: addToCart, openCart } = useCart();
 
   // Redirect to home if not logged in
   useEffect(() => {
@@ -515,10 +543,38 @@ export default function ProfilePage() {
   const [showCancelModal,   setShowCancelModal]   = useState(false);
   const [selectedOrderForCancel, setSelectedOrderForCancel] = useState(null);
   const [cancellingOrderId,  setCancellingOrderId] = useState(null);
+  const [wishlistItems,     setWishlistItems]     = useState([]);
+  const [loadingWishlist,   setLoadingWishlist]   = useState(true);
 
   const refs = Object.fromEntries(ALL_SECTIONS.map((id) => [id, useRef(null)]));
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
+
+  // Handle adding wishlisted product to cart
+  const handleAddWishlistToCart = (product) => {
+    try {
+      // Format product data for cart
+      const cartItem = {
+        product_id: product.id,
+        name: product.name,
+        price: parseFloat(product.price.replace(/[^0-9.-]/g, '') || 0),
+        image: product.image,
+        qty: 1,
+        variant_id: product.variant_id || null,
+        stock: 999, // Default high stock for wishlist items
+      };
+
+      // Add to cart
+      addToCart(cartItem);
+
+      // Show success message and open cart
+      showToast('Added to cart');
+      openCart();
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+      showToast('Failed to add to cart');
+    }
+  };
 
   // Fetch user addresses on mount
   useEffect(() => {
@@ -721,6 +777,54 @@ export default function ProfilePage() {
 
     if (isLoggedIn) {
       fetchOrders();
+    }
+  }, [isLoggedIn]);
+
+  // Fetch user's wishlist items on mount
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      try {
+        setLoadingWishlist(true);
+        const response = await getWishlistItems();
+
+        // Handle API response
+        let wishlistData = [];
+        if (response.data && Array.isArray(response.data.data)) {
+          wishlistData = response.data.data;
+        } else if (response.data && Array.isArray(response.data)) {
+          wishlistData = response.data;
+        } else if (Array.isArray(response)) {
+          wishlistData = response;
+        }
+
+        // Format wishlist items from API response
+        const formattedItems = wishlistData.map(item => {
+          const productId = item.product?.id || item.product_id || item.id;
+          const categoryName = item.product?.product_category?.name;
+          const categorySlug = getCategorySlug(categoryName);
+          
+          return {
+            id: productId,
+            name: item.product?.name || item.name || '',
+            description: item.product?.description || item.product?.sub_topic || item.description || '',
+            price: `Rs.${parseFloat(item.product?.price || item.price || 0).toFixed(2)}`,
+            image: item.product?.image || item.product?.images?.[0] || item.image || null,
+            href: `/products/${categorySlug}/${productId}`,
+            is_wishlisted: true,
+          };
+        });
+
+        setWishlistItems(formattedItems);
+      } catch (error) {
+        console.error('Failed to fetch wishlist:', error);
+        setWishlistItems([]);
+      } finally {
+        setLoadingWishlist(false);
+      }
+    };
+
+    if (isLoggedIn) {
+      fetchWishlist();
     }
   }, [isLoggedIn]);
 
@@ -1269,7 +1373,11 @@ export default function ProfilePage() {
             {/* ═══ MY WISHLIST ════════════════════════════════════ */}
             <div ref={refs["my-wishlist"]}>
               <SectionTitle title="My Wishlist" />
-              {WISHLIST_ITEMS.length === 0 ? (
+              {loadingWishlist ? (
+                <div className="flex justify-center py-16">
+                  <p className="text-[14px] text-gray-400 font-light">Loading wishlist...</p>
+                </div>
+              ) : wishlistItems.length === 0 ? (
                 <div className="flex flex-col items-center gap-4 py-16">
                   <p className="text-[14px] text-gray-400 font-light">Your wishlist is empty</p>
                   <Link to="/clothing"
@@ -1279,8 +1387,12 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                  {WISHLIST_ITEMS.map((item) => (
-                    <ProductCard key={item.id} product={item} />
+                  {wishlistItems.map((item) => (
+                    <ProductCard 
+                      key={item.id} 
+                      product={item}
+                      hideAddToCart={true}
+                    />
                   ))}
                 </div>
               )}

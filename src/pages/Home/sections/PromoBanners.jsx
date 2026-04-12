@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { getPromos } from "@/services/promo";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
@@ -9,10 +10,10 @@ import promoBg2 from "@/assets/banners/promo/shampoo-set.png";
 import promoBg3 from "@/assets/banners/promo/perfume-set.png";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DATA
+// FALLBACK DATA
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PROMOS = [
+const FALLBACK_PROMOS = [
   {
     id: 1,
     image:    promoBg1,
@@ -92,11 +93,11 @@ function PromoCard({ promo }) {
 // MOBILE CAROUSEL
 // ─────────────────────────────────────────────────────────────────────────────
 
-function MobileCarousel() {
+function MobileCarousel({ promos }) {
   const [current,    setCurrent]    = useState(0);
   const [dragStart,  setDragStart]  = useState(null);
   const [isDragging, setIsDragging] = useState(false);
-  const total = PROMOS.length;
+  const total = promos.length;
 
   const goTo = useCallback((i) => setCurrent((i + total) % total), [total]);
   const next  = useCallback(() => goTo(current + 1), [current, goTo]);
@@ -131,7 +132,7 @@ function MobileCarousel() {
           className="flex transition-transform duration-500 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)` }}
         >
-          {PROMOS.map((promo) => (
+          {promos.map((promo) => (
             <div
               key={promo.id}
               className="flex-shrink-0 w-full"
@@ -145,7 +146,7 @@ function MobileCarousel() {
 
       {/* Dots */}
       <div className="flex items-center justify-center gap-2 mt-5">
-        {PROMOS.map((_, i) => (
+        {promos.map((_, i) => (
           <button
             key={i}
             onClick={() => goTo(i)}

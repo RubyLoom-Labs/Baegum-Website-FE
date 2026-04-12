@@ -32,6 +32,18 @@ function WishlistItem({ item }) {
     removeItem(item.id);
   };
 
+  // Parse price to number, handling both string and number formats
+  const parsePrice = (price) => {
+    if (typeof price === 'number') return price;
+    if (typeof price === 'string') {
+      const numStr = price.replace(/[^0-9.-]/g, '');
+      return parseFloat(numStr) || 0;
+    }
+    return 0;
+  };
+
+  const numericPrice = parsePrice(item.price);
+
   return (
     <div className="flex gap-4 py-5 border-b border-gray-100">
       <div className="w-20 h-20 flex-shrink-0 bg-gray-100 overflow-hidden">
@@ -49,7 +61,7 @@ function WishlistItem({ item }) {
             {item.name}
           </p>
           <p className="text-[13px] font-medium text-[#1a1a1a] whitespace-nowrap flex-shrink-0">
-            Rs.{item.price.toFixed(2)}
+            Rs.{numericPrice.toFixed(2)}
           </p>
         </div>
 

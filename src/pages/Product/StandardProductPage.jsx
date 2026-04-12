@@ -10,8 +10,6 @@ import { addToCart as addToCartAPI } from "@/services/cart";
 import { submitProductReview, getProductDetail } from "@/services/product";
 import { transformProductData } from "@/utils/productTransformer";
 
-import wishlistIcon from "@/assets/icons/wishlist.svg";
-
 // ─────────────────────────────────────────────────────────────────────────────
 // STANDARD PRODUCT PAGE
 // ─────────────────────────────────────────────────────────────────────────────
@@ -73,6 +71,15 @@ export default function StandardProductPage({ product, categoryId }) {
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2500);
+  };
+
+  const handleWishlistToggle = () => {
+    if (!isLoggedIn) {
+      openLogin();
+      return;
+    }
+    toggleItem({ id: product.id, name: product.name,
+      price: product.price, image: product.images?.[0] || null });
   };
 
   const handleSubmitReview = async (reviewData) => {
@@ -319,7 +326,9 @@ export default function StandardProductPage({ product, categoryId }) {
     }
   };
 
-  const wishlisted = isWishlisted(product.id);
+  const wishlisted = product.is_wishlisted !== undefined 
+    ? product.is_wishlisted 
+    : isWishlisted(product.id);
 
   return (
     <div className="min-h-screen bg-white">
@@ -341,14 +350,22 @@ export default function StandardProductPage({ product, categoryId }) {
                 {product.name}
               </h1>
               <button
-                onClick={() => toggleItem({ id: product.id, name: product.name,
-                  price: product.price, image: product.images?.[0] || null })}
-                className="hover:opacity-60 transition-opacity mt-1 flex-shrink-0"
-                aria-label="Wishlist"
+                onClick={handleWishlistToggle}
+                className="hover:opacity-70 transition-opacity mt-1 flex-shrink-0 p-1"
+                aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
               >
-                <img src={wishlistIcon} width={22} height={22}
-                  alt="Wishlist" draggable={false}
-                  style={{ opacity: wishlisted ? 1 : 0.5 }} />
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill={wishlisted ? "#1a1a1a" : "none"}
+                  stroke="#1a1a1a"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
               </button>
             </div>
 

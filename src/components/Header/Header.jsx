@@ -204,7 +204,7 @@ export default function Header() {
           {/* Right icons */}
           <div className="flex items-center gap-2">
             <IconButton defaultSrc={userDefault} hoverSrc={userHover} size={19} ariaLabel="Account" onClick={handleProfileClick} />
-            <IconButton defaultSrc={wishlistDefault} hoverSrc={wishlistHover} size={19} ariaLabel="Wishlist" onClick={openWishlist} />
+            {/* <IconButton defaultSrc={wishlistDefault} hoverSrc={wishlistHover} size={19} ariaLabel="Wishlist" onClick={openWishlist} /> */}
             <IconButton defaultSrc={cartDefault} hoverSrc={cartHover} size={19} ariaLabel="Cart" badge={cartCount} onClick={openCart} />
           </div>
         </div>
@@ -269,7 +269,7 @@ export default function Header() {
           }
           rightSlot={
             <>
-              <IconButton defaultSrc={wishlistDefault} hoverSrc={wishlistHover} size={20} ariaLabel="Wishlist" onClick={openWishlist} />
+              {/* <IconButton defaultSrc={wishlistDefault} hoverSrc={wishlistHover} size={20} ariaLabel="Wishlist" onClick={openWishlist} /> */}
               <IconButton defaultSrc={cartDefault} hoverSrc={cartHover} size={20} ariaLabel="Cart" badge={cartCount} onClick={openCart} />
             </>
           }

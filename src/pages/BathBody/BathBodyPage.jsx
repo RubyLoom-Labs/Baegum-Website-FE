@@ -15,8 +15,7 @@ const formatProduct = (apiProduct) => {
         name: apiProduct.name,
         description: apiProduct.sub_topic || `${apiProduct.brand?.name || ''} - ${apiProduct.product_category?.name || ''}`,
         price: `Rs.${parseFloat(apiProduct.price).toFixed(2)}` ?? 'Rs.0.00',
-        href: `/products/bath-body/${apiProduct.id}`,
-    }
+        href: `/products/bath-body/${apiProduct.id}`,        is_wishlisted: apiProduct.is_wishlisted || false,    }
 }
 
 const FilterIcon = () => (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getItems } from "@/services/filterItems";
+import { getItems, getItemsWithAuth } from "@/services/filterItems";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FILTERS PER CATEGORY
@@ -29,7 +29,9 @@ export const fetchFilterOptions = async (filterIds, category) => {
     const endpoint = endpointMap[filterId];
     if (endpoint) {
       try {
-        const response = await getItems(endpoint);
+        // Use authenticated request for shades endpoint
+        const getFunction = filterId === 'shade' ? getItemsWithAuth : getItems;
+        const response = await getFunction(endpoint);
         // Handle both paginated (data.data) and direct (data) response formats
         filterMap[filterId] = response.data?.data || response.data || [];
       } catch (error) {

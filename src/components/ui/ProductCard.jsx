@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useWishlist } from "@/context/WishlistContext";
+import { useAuth } from "@/context/AuthContext";
 
-import wishlistIcon from "@/assets/icons/wishlist.svg";
-import cartIcon     from "@/assets/icons/cart.svg";
+import cartIcon from "@/assets/icons/cart.svg";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PRODUCT CARD
@@ -15,12 +16,37 @@ import cartIcon     from "@/assets/icons/cart.svg";
 //    <ProductCard product={p} />                      ← all other pages
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function ProductCard({ product, variant = "product" }) {
+export default function ProductCard({ product, variant = "product", hideWishlist = false, hideAddToCart = false, onAddToCart }) {
   const [hovered,    setHovered]    = useState(false);
-  const [wishlisted, setWishlisted] = useState(false);
   const [btnHovered, setBtnHovered] = useState(false);
+  
+  const { toggleItem, isWishlisted: isWishlistedInContext, loading } = useWishlist();
+  const { isLoggedIn, openLogin } = useAuth();
+  
+  // Once wishlist context is loaded, use it as source of truth
+  // Before loading completes, use API response as temporary placeholder
+  // This ensures heart updates immediately on click and stays updated
+  const wishlisted = loading ? (product.is_wishlisted ?? false) : isWishlistedInContext(product.id);
 
   const isClothing = variant === "clothing";
+
+  const handleWishlistToggle = (e) => {
+    e.preventDefault();
+    
+    // If not logged in, show login popup
+    if (!isLoggedIn) {
+      openLogin();
+      return;
+    }
+    
+    // If logged in, toggle wishlist
+    toggleItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image
+    });
+  };
 
   return (
     <div
@@ -65,43 +91,57 @@ export default function ProductCard({ product, variant = "product" }) {
           </div>
         </Link>
 
-        {/* Wishlist — top right bare icon */}
-        <button
-          onClick={(e) => { e.preventDefault(); setWishlisted(!wishlisted); }}
-          className="absolute top-3 right-3 z-10 hover:opacity-60 transition-opacity"
-          aria-label="Add to wishlist"
-        >
-          <img
-            src={wishlistIcon}
-            alt="Wishlist"
-            width={18} height={18}
-            draggable={false}
-            style={{ opacity: wishlisted ? 1 : 0.7 }}
-          />
-        </button>
+        {/* Wishlist — top right bare icon — hidden if hideWishlist prop is true */}
+        {!hideWishlist && (
+          <button
+            onClick={handleWishlistToggle}
+            className="absolute top-3 right-3 z-10 hover:opacity-70 transition-opacity p-1"
+            aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill={wishlisted ? "#1a1a1a" : "none"}
+              stroke="#1a1a1a"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </button>
+        )}
 
         {/* Add to Cart — desktop hover overlay */}
-        <div
-          className="hidden md:flex absolute bottom-8 left-0 right-0 justify-center z-10"
-          style={{
-            opacity:    hovered ? 1 : 0,
-            transform:  hovered ? "translateY(0)" : "translateY(12px)",
-            transition: "opacity 0.3s ease, transform 0.3s ease",
-          }}
-        >
-          <button
-            onMouseEnter={() => setBtnHovered(true)}
-            onMouseLeave={() => setBtnHovered(false)}
-            onClick={(e) => e.preventDefault()}
-            className="px-16 py-3 text-[13px] font-normal tracking-wide transition-colors duration-200"
+        {!hideAddToCart && (
+          <div
+            className="hidden md:flex absolute bottom-8 left-0 right-0 justify-center z-10"
             style={{
-              backgroundColor: btnHovered ? "#1a1a1a" : "rgba(255,255,255,0.92)",
-              color:           btnHovered ? "#ffffff" : "#1a1a1a",
+              opacity:    hovered ? 1 : 0,
+              transform:  hovered ? "translateY(0)" : "translateY(12px)",
+              transition: "opacity 0.3s ease, transform 0.3s ease",
             }}
           >
-            Add to Cart
-          </button>
-        </div>
+            <button
+              onMouseEnter={() => setBtnHovered(true)}
+              onMouseLeave={() => setBtnHovered(false)}
+              onClick={(e) => {
+                e.preventDefault();
+                if (onAddToCart) {
+                  onAddToCart(product);
+                }
+              }}
+              className="px-16 py-3 text-[13px] font-normal tracking-wide transition-colors duration-200"
+              style={{
+                backgroundColor: btnHovered ? "#1a1a1a" : "rgba(255,255,255,0.92)",
+                color:           btnHovered ? "#ffffff" : "#1a1a1a",
+              }}
+            >
+              Add to Cart
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Card info ────────────────────────────────────────────── */}
@@ -138,13 +178,20 @@ export default function ProductCard({ product, variant = "product" }) {
             )}
             <div className="flex items-center justify-between mt-1.5 gap-2">
               <p className="text-[13px] font-medium text-[#1a1a1a]">{product.price}</p>
-              <button
-                onClick={(e) => e.preventDefault()}
-                className="hover:opacity-60 transition-opacity"
-                aria-label="Add to cart"
-              >
-                <img src={cartIcon} alt="Add to cart" width={18} height={18} draggable={false} />
-              </button>
+              {!hideAddToCart && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (onAddToCart) {
+                      onAddToCart(product);
+                    }
+                  }}
+                  className="hover:opacity-60 transition-opacity"
+                  aria-label="Add to cart"
+                >
+                  <img src={cartIcon} alt="Add to cart" width={18} height={18} draggable={false} />
+                </button>
+              )}
             </div>
           </div>
         </>
@@ -160,13 +207,20 @@ export default function ProductCard({ product, variant = "product" }) {
             <p className="text-[13px] text-gray-600 font-light">
               {product.price}
             </p>
-            <button
-              onClick={(e) => e.preventDefault()}
-              className="md:hidden hover:opacity-60 transition-opacity"
-              aria-label="Add to cart"
-            >
-              <img src={cartIcon} alt="Add to cart" width={18} height={18} draggable={false} />
-            </button>
+            {!hideAddToCart && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (onAddToCart) {
+                    onAddToCart(product);
+                  }
+                }}
+                className="md:hidden hover:opacity-60 transition-opacity"
+                aria-label="Add to cart"
+              >
+                <img src={cartIcon} alt="Add to cart" width={18} height={18} draggable={false} />
+              </button>
+            )}
           </div>
         </div>
       )}
