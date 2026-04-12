@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import ProductCard from "@/components/ui/ProductCard";
 import { getUserAddresses, createUserAddress, setDefaultAddress, deleteUserAddress, updateUserProfile, getUserProfile, getCurrentOrders } from "@/services/user";
+import { getProductDetail, getProductVariantDetail } from "@/services/product";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SAMPLE DATA
@@ -383,27 +384,30 @@ function EditProfileModal({ user, onClose, onSave, showToast }) {
 // ORDER ROW
 // ─────────────────────────────────────────────────────────────────────────────
 
-function OrderRow({ item, type }) {
+function OrderRow({ item, type, onViewOrder }) {
   return (
     <div className="flex items-center gap-4 py-3.5 border-b border-gray-100 last:border-0">
-      <div className="w-12 h-12 flex-shrink-0 bg-gray-200 overflow-hidden rounded-sm">
-        {item.image && <img src={item.image} alt="" className="w-full h-full object-cover" />}
+      <div className="w-12 h-12 flex-shrink-0 bg-gray-200 overflow-hidden rounded-sm flex items-center justify-center text-[13px] font-medium text-gray-600">
+        {item.orderId}
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-medium text-[#1a1a1a]">{item.name}</p>
         <p className="text-[11px] text-gray-500 font-light mt-0.5 leading-relaxed">
           {item.price}
           {item.orderDate && <> &nbsp;|&nbsp; {item.orderDate}</>}
-          {type === "current" && item.shippingDate && (
-            <> &nbsp;|&nbsp; <span className="text-gray-400">To: {item.shippingDate}</span></>
-          )}
+          {type === "current" && item.status && <> &nbsp;|&nbsp; Status: <span className="text-[#1a1a1a]">{item.status}</span></>}
+          {type === "current" && item.itemCount && <> &nbsp;|&nbsp; Items: <span className="text-[#1a1a1a]">{item.itemCount}</span></>}
           {item.arrivedDate && <> &nbsp;|&nbsp; Arrived: {item.arrivedDate}</>}
           {item.reason && <> &nbsp;|&nbsp; {item.reason}</>}
         </p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         {type === "current" && (
-          <><BtnSmall label="Track Order" onClick={() => {}} /><BtnSmallPink label="# Cancel" onClick={() => {}} /></>
+          <>
+            <BtnSmall label="View Order" onClick={() => onViewOrder && onViewOrder(item)} />
+            <BtnSmall label="Track Order" onClick={() => {}} />
+            <BtnSmallPink label="# Cancel" onClick={() => {}} />
+          </>
         )}
         {type === "reviews" && (
           <><BtnSmall label="Completed" onClick={() => {}} /><BtnSmall label="Reviews" onClick={() => {}} /></>
@@ -468,6 +472,7 @@ export default function ProfilePage() {
   const [addressError,      setAddressError]      = useState(null);
   const [loadingProfile,    setLoadingProfile]    = useState(true);
   const [currentOrders,     setCurrentOrders]     = useState([]);
+  const [rawOrders,         setRawOrders]         = useState({});
   const [loadingOrders,     setLoadingOrders]     = useState(true);
 
   const refs = Object.fromEntries(ALL_SECTIONS.map((id) => [id, useRef(null)]));
@@ -584,48 +589,47 @@ export default function ProfilePage() {
 
         // Format orders from API response
         const formattedOrders = ordersList.map(order => {
-          // Get first item name from order_items array
-          const firstItem = order.order_items && order.order_items.length > 0
-            ? order.order_items[0]
-            : null;
-
-          // Get address details
-          const address = order.address_detail || {};
-          const addressStr = address.street1
-            ? `${address.street1}${address.street2 ? ', ' + address.street2 : ''}, ${address.city}, ${address.district}, ${address.province}`
-            : 'Address not available';
-
           // Format date from date_time (format: "2026-04-12 08:38:36")
           const orderDate = order.date_time
             ? order.date_time.split(' ')[0]
             : '';
 
           // Get total amount
-          const price = order.total_amount
-            ? `Rs.${parseFloat(order.total_amount).toFixed(2)}`
-            : 'N/A';
+          const totalAmount = parseFloat(order.total_amount || 0);
+          const price = `Rs.${totalAmount.toFixed(2)}`;
 
           // Get item count
           const itemCount = order.order_items ? order.order_items.length : 0;
+          
+          // Get order status
+          const statusName = order.order_status?.name || 'Pending';
 
           return {
             id: order.id,
-            name: firstItem
-              ? `${firstItem.product_id ? '#' + firstItem.product_id : 'Product'} (${itemCount} ${itemCount === 1 ? 'item' : 'items'})`
-              : ` #${order.id} (${itemCount} ${itemCount === 1 ? 'item' : 'items'})`,
+            orderId: `#${order.id}`,
+            name: `Order #${order.id}`,
             price: price,
+            totalAmount: order.total_amount,
             orderDate: orderDate,
-            shippingDate: addressStr,
-            image: null,
+            status: statusName,
             itemCount: itemCount,
-            totalAmount: order.total_amount
+            shippingDate: null,
+            image: null
           };
         });
 
         setCurrentOrders(formattedOrders);
+
+        // Store raw order data mapped by ID for later use
+        const rawOrdersMap = {};
+        ordersList.forEach(order => {
+          rawOrdersMap[order.id] = order;
+        });
+        setRawOrders(rawOrdersMap);
       } catch (error) {
         console.error('Failed to fetch current orders:', error);
         setCurrentOrders([]);
+        setRawOrders({});
       } finally {
         setLoadingOrders(false);
       }
@@ -734,6 +738,117 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Failed to remove address:', error);
       showToast('Failed to remove address');
+    }
+  };
+
+  const handleViewOrder = async (order) => {
+    try {
+      // Get raw order data from stored map
+      const rawOrder = rawOrders[order.id];
+
+      if (!rawOrder) {
+        console.error('Raw order data not found');
+        showToast('Failed to load order details');
+        return;
+      }
+
+      // Map all order items with product details
+      const items = await Promise.all(
+        (rawOrder.order_items || []).map(async (orderItem) => {
+          try {
+            // Fetch product details
+            const productResponse = await getProductDetail(orderItem.product_id);
+
+            // Handle nested response structure
+            let productData = productResponse;
+            if (productResponse.data) {
+              productData = productResponse.data.data || productResponse.data;
+            }
+
+            console.log('Product data:', productData);
+
+            // Extract product name with multiple fallbacks
+            const productName = productData?.name
+              || productData?.product_name
+              || productData?.title
+              || `Product #${orderItem.product_id}`;
+
+            // Extract variant details from order item's product_variant data
+            let variantString = null;
+            if (orderItem.product_variant && orderItem.product_variant.criteria) {
+              // Build variant string from criteria array
+              const variantParts = orderItem.product_variant.criteria
+                .map(criterion => {
+                  const criteriaType = criterion.criteria_type?.code || criterion.criteria_type?.name;
+                  const criteriaValue = criterion.criteria_value?.name;
+                  return criteriaValue;
+                })
+                .filter(Boolean);
+
+              if (variantParts.length > 0) {
+                variantString = variantParts.join(', ');
+                console.log('Variant string from criteria:', variantString);
+              }
+            }
+
+            return {
+              id: orderItem.id,
+              name: productName,
+              image: productData?.image || productData?.product_image || productData?.images?.[0] || null,
+              qty: orderItem.quantity || 1,
+              price: parseFloat(orderItem.unit_price || 0),
+              variant: variantString
+            };
+          } catch (err) {
+            console.error('Failed to fetch product details for product', orderItem.product_id, ':', err);
+            // Fallback if product fetch fails
+            let variantString = null;
+            if (orderItem.product_variant && orderItem.product_variant.criteria) {
+              const variantParts = orderItem.product_variant.criteria
+                .map(criterion => criterion.criteria_value?.name)
+                .filter(Boolean);
+              variantString = variantParts.length > 0 ? variantParts.join(', ') : null;
+            }
+
+            return {
+              id: orderItem.id,
+              name: `Product #${orderItem.product_id}`,
+              image: null,
+              qty: orderItem.quantity || 1,
+              price: parseFloat(orderItem.unit_price || 0),
+              variant: variantString
+            };
+          }
+        })
+      );
+
+      // Get address details from raw order
+      const addressDetail = rawOrder.address_detail || {};
+      const addressStr = addressDetail.street1
+        ? `${addressDetail.street1}${addressDetail.street2 ? ', ' + addressDetail.street2 : ''}, ${addressDetail.city}, ${addressDetail.district}, ${addressDetail.province}`
+        : 'Address not available';
+
+      // Transform the order data to match OrderConfirmation format
+      const transformedOrder = {
+        orderId: order.id.toString(),
+        items: items,
+        address: {
+          name: addressDetail.label || "Delivery Address",
+          address: addressStr,
+          phone: rawOrder.user?.phone || "N/A"
+        },
+        paymentMethod: 'cod',
+        card: null,
+        subtotal: parseFloat(rawOrder.total_amount || 0),
+        shippingFee: 0,
+        orderTotal: parseFloat(rawOrder.total_amount || 0),
+        showSuccessMessage: false
+      };
+
+      navigate('/order-confirmation', { state: transformedOrder });
+    } catch (error) {
+      console.error('Error viewing order:', error);
+      showToast('Failed to load order details');
     }
   };
 
@@ -990,7 +1105,7 @@ export default function ProfilePage() {
                     ) : currentOrders.length === 0 ? (
                       <p className="text-[13px] text-gray-500 font-light py-4">No current orders</p>
                     ) : (
-                      currentOrders.map((o) => <OrderRow key={o.id} item={o} type="current" />)
+                      currentOrders.map((o) => <OrderRow key={o.id} item={o} type="current" onViewOrder={handleViewOrder} />)
                     )}
                   </Card>
                 </div>

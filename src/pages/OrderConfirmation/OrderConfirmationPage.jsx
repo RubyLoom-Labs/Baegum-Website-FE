@@ -58,32 +58,46 @@ export default function OrderConfirmationPage() {
     )
   }
 
-  const { items, address, paymentMethod, card, subtotal, shippingFee, orderTotal, orderId } = order
+  const { items, address, paymentMethod, card, subtotal, shippingFee, orderTotal, orderId, showSuccessMessage = true } = order
 
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-screen-xl mx-auto px-4 md:px-6 py-10">
 
         {/* ── Success header ────────────────────────────────────── */}
-        <div className="flex flex-col items-center text-center mb-10">
-          {/* Success icon */}
-          <div className="w-14 h-14 rounded-full bg-green-50 border border-green-200
-                          flex items-center justify-center mb-4">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-              stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
+        {showSuccessMessage && (
+          <div className="flex flex-col items-center text-center mb-10">
+            {/* Success icon */}
+            <div className="w-14 h-14 rounded-full bg-green-50 border border-green-200
+                            flex items-center justify-center mb-4">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <h1 className="text-[22px] font-light text-[#1a1a1a] tracking-wide mb-1">
+              Order Placed Successfully
+            </h1>
+            <p className="text-[13px] text-gray-500 font-light">
+              Thank you for your order! We'll send you a confirmation email shortly.
+            </p>
+            <p className="text-[12px] text-gray-400 font-light mt-2 tracking-widest uppercase">
+              Order ID: {orderId}
+            </p>
           </div>
-          <h1 className="text-[22px] font-light text-[#1a1a1a] tracking-wide mb-1">
-            Order Placed Successfully
-          </h1>
-          <p className="text-[13px] text-gray-500 font-light">
-            Thank you for your order! We'll send you a confirmation email shortly.
-          </p>
-          <p className="text-[12px] text-gray-400 font-light mt-2 tracking-widest uppercase">
-            Order ID: {orderId}
-          </p>
-        </div>
+        )}
+
+        {/* ── Order Details Header (when viewing from profile) ────── */}
+        {!showSuccessMessage && (
+          <div className="flex flex-col items-center text-center mb-10">
+            <h1 className="text-[22px] font-light text-[#1a1a1a] tracking-wide mb-1">
+              Order Details
+            </h1>
+            <p className="text-[12px] text-gray-400 font-light mt-2 tracking-widest uppercase">
+              Order ID: {orderId}
+            </p>
+          </div>
+        )}
 
         {/* ── Main content ──────────────────────────────────────── */}
         <div className="flex flex-col lg:flex-row gap-8">

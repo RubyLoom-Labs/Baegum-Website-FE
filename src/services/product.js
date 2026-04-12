@@ -23,3 +23,8 @@ export const getProductDetail = async (id) => {
   const response = await api.get(`/api/products/${id}`)
   return response;
 }
+
+export const getProductVariantDetail = async (variantId) => {
+  const response = await api.get(`/api/product-variants/${variantId}`)
+  return response;
+}
