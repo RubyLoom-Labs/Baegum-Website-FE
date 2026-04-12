@@ -58,7 +58,7 @@ export default function OrderConfirmationPage() {
     )
   }
 
-  const { items, address, paymentMethod, card, subtotal, shippingFee, orderTotal, orderId, showSuccessMessage = true } = order
+  const { items, address, paymentMethod, card, subtotal, shippingFee, orderTotal, orderId, orderStatusId = 1, showSuccessMessage = true } = order
 
   return (
     <div className="min-h-screen bg-white">
@@ -199,21 +199,28 @@ export default function OrderConfirmationPage() {
               <Card>
                 <CardTitle title="Estimated Delivery" />
                 <div className="flex flex-col gap-1.5">
+                  {/* Status 1: Order Confirmed */}
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />
-                    <p className="text-[12px] text-[#1a1a1a] font-light">Order Confirmed</p>
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${orderStatusId >= 1 ? 'bg-green-400' : 'bg-gray-200'}`} />
+                    <p className={`text-[12px] font-light ${orderStatusId >= 1 ? 'text-[#1a1a1a]' : 'text-gray-400'}`}>Order Confirmed</p>
                   </div>
+                  
+                  {/* Status 2: Processing */}
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-gray-200 flex-shrink-0" />
-                    <p className="text-[12px] text-gray-400 font-light">Processing (1–2 days)</p>
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${orderStatusId >= 2 ? 'bg-green-400' : 'bg-gray-200'}`} />
+                    <p className={`text-[12px] font-light ${orderStatusId >= 2 ? 'text-[#1a1a1a]' : 'text-gray-400'}`}>Processing (1–2 days)</p>
                   </div>
+                  
+                  {/* Status 3: Shipped */}
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-gray-200 flex-shrink-0" />
-                    <p className="text-[12px] text-gray-400 font-light">Shipped (2–4 days)</p>
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${orderStatusId >= 3 ? 'bg-green-400' : 'bg-gray-200'}`} />
+                    <p className={`text-[12px] font-light ${orderStatusId >= 3 ? 'text-[#1a1a1a]' : 'text-gray-400'}`}>Shipped (2–4 days)</p>
                   </div>
+                  
+                  {/* Status 4: Delivered */}
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-gray-200 flex-shrink-0" />
-                    <p className="text-[12px] text-gray-400 font-light">Delivered (3–5 days)</p>
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${orderStatusId >= 4 ? 'bg-green-400' : 'bg-gray-200'}`} />
+                    <p className={`text-[12px] font-light ${orderStatusId >= 4 ? 'text-[#1a1a1a]' : 'text-gray-400'}`}>Delivered (3–5 days)</p>
                   </div>
                 </div>
               </Card>

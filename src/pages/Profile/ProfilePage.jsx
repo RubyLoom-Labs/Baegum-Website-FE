@@ -831,6 +831,7 @@ export default function ProfilePage() {
       // Transform the order data to match OrderConfirmation format
       const transformedOrder = {
         orderId: order.id.toString(),
+        orderStatusId: rawOrder.order_status_id || 1,
         items: items,
         address: {
           name: addressDetail.label || "Delivery Address",
