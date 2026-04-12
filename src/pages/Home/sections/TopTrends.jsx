@@ -1,5 +1,44 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { getBestSellers } from "@/services/product";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER FUNCTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Convert category name to URL slug
+ * Maps: "Clothing" → "clothing", "Bath & Body" → "bath-body", etc.
+ */
+const getCategorySlug = (categoryName) => {
+  if (!categoryName) return 'products';
+
+  const categoryMap = {
+    'clothing': 'clothing',
+    'makeup': 'makeup',
+    'fragrance': 'fragrance',
+    'bath & body': 'bath-body',
+    'bath body': 'bath-body',
+    'skincare': 'skincare',
+    'skincare products': 'skincare',
+  };
+
+  const slug = categoryMap[categoryName.toLowerCase().trim()];
+  return slug || categoryName.toLowerCase().replace(/\s+/g, '-');
+};
+
+/**
+ * Construct full image URL from relative path
+ */
+const getFullImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+  return `${apiUrl}/${cleanPath}`;
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
@@ -114,9 +153,48 @@ function MobileTrendCell({ icon, label, href, borderRight, borderBottom }) {
 
 export default function TopTrends() {
   const [active, setActive] = useState(null);
+  const [trends, setTrends] = useState(TRENDS);
+  const [loading, setLoading] = useState(true);
 
-  // Mobile shows first 6 items in a 3×2 grid
-  const mobileItems = TRENDS.slice(0, 6);
+  // Fetch best sellers and format as trends
+  useEffect(() => {
+    const fetchBestSellers = async () => {
+      try {
+        setLoading(true);
+        const response = await getBestSellers(1, {});
+
+        // Extract products from response
+        const productsData = response.data || response.products || [];
+
+        // Format best sellers as trends (limit to 10 items)
+        const formattedTrends = productsData.slice(0, 10).map((product) => {
+          const categoryName = product.product_category?.name;
+          const categorySlug = getCategorySlug(categoryName);
+          const productImage = product.image || product.product?.images?.[0];
+
+          return {
+            id: product.id,
+            icon: getFullImageUrl(productImage) || null,
+            label: product.name,
+            href: `/products/${categorySlug}/${product.id}`,
+          };
+        });
+
+        // Use fetched data if available, otherwise fallback to static TRENDS
+        if (formattedTrends.length > 0) {
+          setTrends(formattedTrends);
+        }
+      } catch (error) {
+        console.error('Failed to fetch best sellers for trends:', error);
+        // Use fallback static data
+        setTrends(TRENDS);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBestSellers();
+  }, []);
 
   return (
     <section className="w-full py-10 bg-white">
@@ -130,7 +208,7 @@ export default function TopTrends() {
 
         {/* ── Desktop: 5 cols × 2 rows ────────────────────────────── */}
         <div className="hidden md:grid md:grid-cols-5 gap-3">
-          {TRENDS.map((trend) => (
+          {trends.map((trend) => (
             <TrendCard
               key={trend.id}
               icon={trend.icon}
@@ -152,7 +230,7 @@ export default function TopTrends() {
           }}
         >
           <div className="grid grid-cols-3">
-            {mobileItems.map((trend, i) => (
+            {trends.slice(0, 6).map((trend, i) => (
               <MobileTrendCell
                 key={trend.id}
                 icon={trend.icon}

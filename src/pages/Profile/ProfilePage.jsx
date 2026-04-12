@@ -1018,6 +1018,28 @@ export default function ProfilePage() {
         ? `${addressDetail.street1}${addressDetail.street2 ? ', ' + addressDetail.street2 : ''}, ${addressDetail.city}, ${addressDetail.district}, ${addressDetail.province}`
         : 'Address not available';
 
+      // Format order date/time
+      const formatDateTime = (dateString) => {
+        if (!dateString) return null;
+
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+
+        // Format as "Apr 12, 2026 at 1:57 PM"
+        const options = {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        };
+
+        return date.toLocaleDateString('en-US', options).replace(',', ', at');
+      };
+
+      const orderDateTime = formatDateTime(rawOrder.date_time);
+
       // Transform the order data to match OrderConfirmation format
       const transformedOrder = {
         orderId: order.id.toString(),
@@ -1033,6 +1055,7 @@ export default function ProfilePage() {
         subtotal: parseFloat(rawOrder.total_amount || 0),
         shippingFee: 0,
         orderTotal: parseFloat(rawOrder.total_amount || 0),
+        orderPlacedDateTime: orderDateTime,
         showSuccessMessage: false
       };
 

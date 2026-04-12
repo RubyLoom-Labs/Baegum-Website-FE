@@ -12,12 +12,12 @@ import promoBg3 from "@/assets/banners/promo/perfume-set.png";
 // Helper function to construct full image URL
 const getFullImageUrl = (imagePath) => {
   if (!imagePath) return '';
-  
+
   // If already a full URL, return as is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
-  
+
   // Construct full URL from relative path
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
   // Remove leading slash if present

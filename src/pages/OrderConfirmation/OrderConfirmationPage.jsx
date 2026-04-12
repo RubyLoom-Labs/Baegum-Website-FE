@@ -289,7 +289,7 @@ export default function OrderConfirmationPage() {
     )
   }
 
-  const { items, address, paymentMethod, card, subtotal, shippingFee, orderTotal, orderId, orderStatusId = 1, showSuccessMessage = true } = order
+  const { items, address, paymentMethod, card, subtotal, shippingFee, orderTotal, orderId, orderStatusId = 1, orderPlacedDateTime, showSuccessMessage = true } = order
 
   // Review modal state
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -552,6 +552,14 @@ export default function OrderConfirmationPage() {
               )}
             </Card>
 
+            {/* Order Placed Date & Time */}
+            {orderPlacedDateTime && (
+              <Card>
+                <CardTitle title="Order Placed" />
+                <p className="text-[13px] text-[#1a1a1a] font-medium">{orderPlacedDateTime}</p>
+              </Card>
+            )}
+
             {/* Payment method */}
             <Card>
               <CardTitle title="Payment Method" />
@@ -594,6 +602,9 @@ export default function OrderConfirmationPage() {
                   </div>
                 </div>
               </Card>
+
+              {/* Order Placed Date & Time */}
+
 
               {/* Estimated delivery */}
               <Card>
