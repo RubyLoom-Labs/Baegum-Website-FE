@@ -78,10 +78,13 @@ function getErrorMessage(status, statusText, data) {
 async function apiRequest(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}`
   const defaultOptions = {
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: {},
     timeout: API_TIMEOUT,
+  }
+
+  // Only set Content-Type if not a FormData request
+  if (!options.skipContentType) {
+    defaultOptions.headers['Content-Type'] = 'application/json';
   }
 
   // Add authorization token if available
@@ -136,6 +139,17 @@ export function get(endpoint) {
 }
 
 /**
+ * POST request with FormData (for file uploads)
+ */
+export function postFormData(endpoint, formData) {
+  return apiRequest(endpoint, {
+    method: 'POST',
+    body: formData,
+    skipContentType: true, // Tell apiRequest not to set Content-Type
+  })
+}
+
+/**
  * POST request
  */
 export function post(endpoint, data) {
@@ -169,6 +183,7 @@ export function deleteRequest(endpoint, data) {
 export default {
   get,
   post,
+  postFormData,
   put,
   deleteRequest,
 }

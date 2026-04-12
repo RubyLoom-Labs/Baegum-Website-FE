@@ -435,7 +435,7 @@ function OrderRow({ item, type, onViewOrder }) {
 // All scrollable section IDs in order
 const ALL_SECTIONS = [
   "my-profile", "address-book", "payment-options",
-  "current-orders", "completed-orders", "my-returns", "my-cancellations", "my-reviews",
+  "current-orders", "completed-orders", "my-returns", "my-cancellations",
   "my-wishlist",
 ];
 
@@ -827,6 +827,7 @@ export default function ProfilePage() {
 
             return {
               id: orderItem.id,
+              product_id: orderItem.product_id,
               name: productName,
               image: productData?.image || productData?.product_image || productData?.images?.[0] || null,
               qty: orderItem.quantity || 1,
@@ -846,6 +847,7 @@ export default function ProfilePage() {
 
             return {
               id: orderItem.id,
+              product_id: orderItem.product_id,
               name: `Product #${orderItem.product_id}`,
               image: null,
               qty: orderItem.quantity || 1,
@@ -908,7 +910,7 @@ export default function ProfilePage() {
 
   const NavGroup = ({ label, target }) => {
     const isActive = ["my-profile","address-book","payment-options"].includes(activeId) && target === "manage"
-      || ["current-orders","my-returns","my-cancellations","my-reviews"].includes(activeId) && target === "orders"
+      || ["current-orders","my-returns","my-cancellations"].includes(activeId) && target === "orders"
       || activeId === "my-wishlist" && target === "wishlist";
     return (
       <p className={`text-[13px] font-semibold tracking-wide mb-1.5
@@ -943,7 +945,6 @@ export default function ProfilePage() {
                   <NavLink label="Completed Orders" target="completed-orders" badge={completedOrders.length} />
                   <NavLink label="My Returns"       target="my-returns"       badge={returnedOrders.length} />
                   <NavLink label="My Cancellations" target="my-cancellations" badge={cancelledOrders.length} />
-                  <NavLink label="My Reviews"       target="my-reviews"       badge={REVIEWS_PENDING.length} />
                 </div>
               </div>
 
@@ -1157,17 +1158,6 @@ export default function ProfilePage() {
                     ) : (
                       completedOrders.map((o) => <OrderRow key={o.id} item={o} type="completed" onViewOrder={handleViewOrder} />)
                     )}
-                  </Card>
-                </div>
-
-                {/* My Reviews */}
-                <div ref={refs["my-reviews"]}>
-                  <Card>
-                    <p className="text-[14px] font-semibold text-[#1a1a1a] tracking-wide mb-4">
-                      My Reviews
-                      <span className="font-light text-gray-500 text-[13px]"> — pending to Reviews</span>
-                    </p>
-                    {REVIEWS_PENDING.map((o) => <OrderRow key={o.id} item={o} type="reviews" />)}
                   </Card>
                 </div>
 

@@ -1,6 +1,22 @@
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useCart } from '@/context/CartContext'
+import { submitProductReview, getOrderReviews } from '@/services/product'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TOAST NOTIFICATION
+// ─────────────────────────────────────────────────────────────────────────────
+
+function Toast({ message, type = 'success' }) {
+  const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+  return (
+    <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] px-6 py-3
+                    ${bgColor} text-white text-[13px] font-light rounded-sm shadow-xl
+                    transition-all duration-300 whitespace-nowrap`}>
+      {message}
+    </div>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REUSABLE BITS  (same style as Profile + Checkout)
@@ -27,6 +43,180 @@ const InfoRow = ({ label, value }) => (
     <p className="text-[12px] text-[#1a1a1a] font-medium text-right">{value}</p>
   </div>
 )
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REVIEW MODAL COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ReviewModal({ item, orderId, onClose, onSubmit, onError }) {
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [reviewText, setReviewText] = useState('');
+  const [photos, setPhotos] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handlePhotoUpload = (e) => {
+    const files = Array.from(e.target.files);
+    setPhotos([...photos, ...files]);
+  };
+
+  const removePhoto = (index) => {
+    setPhotos(photos.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async () => {
+    if (rating === 0) {
+      alert('Please select a rating');
+      return;
+    }
+    
+    setIsSubmitting(true);
+
+    try {
+      // Call the review submission API
+      const reviewData = {
+        product_id: item.product_id || item.id, // Use product_id, fallback to id if not available
+        order_id: orderId,
+        rating: rating,
+        review: reviewText,
+        photos: photos
+      };
+
+      await submitProductReview(reviewData);
+      
+      // Call the success callback
+      onSubmit({ rating, reviewText, photos });
+      
+      setTimeout(() => {
+        onClose();
+        setIsSubmitting(false);
+      }, 500);
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      setIsSubmitting(false);
+      // Call the error callback if provided
+      if (onError) {
+        onError(error);
+      }
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-sm max-w-md w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-5 flex items-center justify-between">
+          <h2 className="text-[16px] font-semibold text-[#1a1a1a]">Write a Review</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-[#1a1a1a] text-[20px]">
+            ×
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-5 flex flex-col gap-4">
+          {/* Product Info */}
+          <div className="flex gap-3 pb-4 border-b border-gray-100">
+            <div className="w-12 h-12 flex-shrink-0 bg-gray-100 rounded-sm overflow-hidden">
+              {item.image ? (
+                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gray-200" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-medium text-[#1a1a1a] line-clamp-2">{item.name}</p>
+              {item.variant && <p className="text-[11px] text-gray-400 mt-0.5">{item.variant}</p>}
+            </div>
+          </div>
+
+          {/* Rating */}
+          <div>
+            <p className="text-[12px] font-semibold text-[#1a1a1a] mb-2">Your Rating</p>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  onClick={() => setRating(star)}
+                  onMouseEnter={() => setHoveredRating(star)}
+                  onMouseLeave={() => setHoveredRating(0)}
+                  className="text-[24px] transition-colors"
+                >
+                  {star <= (hoveredRating || rating) ? '★' : '☆'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Review Text */}
+          <div>
+            <p className="text-[12px] font-semibold text-[#1a1a1a] mb-2">Your Review</p>
+            <textarea
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              placeholder="Share your experience with this product..."
+              className="w-full border border-gray-300 rounded-sm p-3 text-[12px] font-light
+                         resize-none focus:outline-none focus:border-gray-500 h-24"
+            />
+          </div>
+
+          {/* Photo Upload */}
+          <div>
+            <p className="text-[12px] font-semibold text-[#1a1a1a] mb-2">Add Photos</p>
+            <label className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-sm p-4 cursor-pointer hover:border-gray-400 transition-colors">
+              <div className="flex flex-col items-center gap-1">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-400">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+                </svg>
+                <span className="text-[11px] text-gray-500 font-light">Click to upload photos</span>
+              </div>
+              <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+            </label>
+            
+            {/* Photo Preview */}
+            {photos.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                {photos.map((photo, index) => (
+                  <div key={index} className="relative w-full aspect-square bg-gray-100 rounded-sm overflow-hidden">
+                    <img
+                      src={URL.createObjectURL(photo)}
+                      alt={`Preview ${index}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      onClick={() => removePhoto(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[12px] hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-gray-200 p-4 flex gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 border border-gray-300 text-[#1a1a1a] text-[12px] font-light
+                       hover:border-[#1a1a1a] hover:bg-gray-50 transition-colors rounded-sm"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="flex-1 py-2.5 bg-[#1a1a1a] hover:bg-gray-800 active:bg-gray-700 disabled:opacity-50
+                       text-white text-[12px] font-medium transition-colors rounded-sm"
+          >
+            {isSubmitting ? 'Submitting...' : 'Submit Review'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ORDER CONFIRMATION PAGE
@@ -59,6 +249,113 @@ export default function OrderConfirmationPage() {
   }
 
   const { items, address, paymentMethod, card, subtotal, shippingFee, orderTotal, orderId, orderStatusId = 1, showSuccessMessage = true } = order
+
+  // Review modal state
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedItemForReview, setSelectedItemForReview] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [toastType, setToastType] = useState('success');
+  const [reviews, setReviews] = useState({}); // Map of product_id -> review
+  const [loadingReviews, setLoadingReviews] = useState(true);
+
+  const showToast = (msg, type = 'success') => { 
+    setToast(msg); 
+    setToastType(type);
+    setTimeout(() => setToast(null), 3000); 
+  };
+
+  // Fetch existing reviews for this order
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setLoadingReviews(true);
+        const response = await getOrderReviews(orderId);
+        
+        // Handle nested response structure
+        let reviewsData = response;
+        if (response.data) {
+          reviewsData = response.data.data || response.data;
+        }
+
+        // Create a map of product_id -> review
+        const reviewsMap = {};
+        if (Array.isArray(reviewsData)) {
+          reviewsData.forEach(review => {
+            reviewsMap[review.product_id] = review;
+          });
+        }
+        setReviews(reviewsMap);
+      } catch (error) {
+        console.error('Failed to fetch reviews:', error);
+        // Don't show error toast, reviews are optional
+      } finally {
+        setLoadingReviews(false);
+      }
+    };
+
+    if (orderId) {
+      fetchReviews();
+    }
+  }, [orderId]);
+
+  const handleOpenReview = (item) => {
+    setSelectedItemForReview(item);
+    setShowReviewModal(true);
+  };
+
+  const handleCloseReview = () => {
+    setShowReviewModal(false);
+    setSelectedItemForReview(null);
+  };
+
+  const handleSubmitReview = async (reviewData) => {
+    // Success callback from ReviewModal
+    showToast('Thank you! Your review has been submitted successfully.', 'success');
+    
+    // Refetch reviews to display the newly submitted review with full details from API
+    try {
+      setLoadingReviews(true);
+      const response = await getOrderReviews(orderId);
+      
+      // Handle nested response structure
+      let reviewsData = response;
+      if (response.data) {
+        reviewsData = response.data.data || response.data;
+      }
+
+      // Create a map of product_id -> review
+      const reviewsMap = {};
+      if (Array.isArray(reviewsData)) {
+        reviewsData.forEach(review => {
+          reviewsMap[review.product_id] = review;
+        });
+      }
+      setReviews(reviewsMap);
+    } catch (error) {
+      console.error('Failed to refetch reviews:', error);
+      // Fallback: show review data locally even if refetch fails
+      if (selectedItemForReview) {
+        setReviews(prev => ({
+          ...prev,
+          [selectedItemForReview.product_id || selectedItemForReview.id]: {
+            product_id: selectedItemForReview.product_id || selectedItemForReview.id,
+            rating: reviewData.rating,
+            comment: reviewData.review,
+            photos: reviewData.photos,
+            user: {
+              first_name: 'You',
+              last_name: ''
+            },
+            created_at: new Date().toISOString()
+          }
+        }));
+      }
+    } finally {
+      setLoadingReviews(false);
+    }
+    
+    handleCloseReview();
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -128,6 +425,63 @@ export default function OrderConfirmationPage() {
                       <p className="text-[12px] text-gray-500 font-light mt-0.5">
                         Qty: {item.qty} &nbsp;×&nbsp; Rs.{item.price.toFixed(2)}
                       </p>
+                      
+                      {/* Check if review exists for this product */}
+                      {reviews[item.product_id || item.id] ? (
+                        // Show existing review
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          {/* Reviewer info */}
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <p className="text-[11px] font-semibold text-[#1a1a1a]">
+                                {reviews[item.product_id || item.id].user?.first_name} {reviews[item.product_id || item.id].user?.last_name}
+                              </p>
+                              {reviews[item.product_id || item.id].created_at && (
+                                <p className="text-[10px] text-gray-400 font-light">
+                                  {new Date(reviews[item.product_id || item.id].created_at).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                            {/* Rating */}
+                            <div className="flex gap-0.5">
+                              {[...Array(5)].map((_, i) => (
+                                <span key={i} className={`text-[12px] ${i < reviews[item.product_id || item.id].rating ? 'text-yellow-400' : 'text-gray-300'}`}>
+                                  ★
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          {/* Review comment */}
+                          <p className="text-[11px] text-gray-700 font-light leading-relaxed">{reviews[item.product_id || item.id].comment}</p>
+                          
+                          {/* Review photos */}
+                          {reviews[item.product_id || item.id].photos && reviews[item.product_id || item.id].photos.length > 0 && (
+                            <div className="flex gap-2 mt-2 flex-wrap">
+                              {reviews[item.product_id || item.id].photos.map((photo, idx) => (
+                                <div key={idx} className="w-12 h-12 bg-gray-100 rounded-sm overflow-hidden border border-gray-200">
+                                  <img 
+                                    src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/storage/${photo}`} 
+                                    alt={`Review photo ${idx}`} 
+                                    className="w-full h-full object-cover" 
+                                    onError={(e) => { e.target.src = ''; e.target.style.display = 'none'; }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        // Show review button for delivered orders
+                        orderStatusId === 4 && (
+                          <button
+                            onClick={() => handleOpenReview(item)}
+                            className="text-[11px] text-[#FF8989] font-light mt-2 hover:underline"
+                          >
+                            Write a Review
+                          </button>
+                        )
+                      )}
                     </div>
                     {/* Line total */}
                     <p className="text-[13px] font-semibold text-[#1a1a1a] flex-shrink-0">
@@ -254,6 +608,20 @@ export default function OrderConfirmationPage() {
           </div>
         </div>
       </div>
+
+      {/* Review Modal */}
+      {showReviewModal && selectedItemForReview && (
+        <ReviewModal
+          item={selectedItemForReview}
+          orderId={orderId}
+          onClose={handleCloseReview}
+          onSubmit={handleSubmitReview}
+          onError={(error) => showToast('Failed to submit review. Please try again.', 'error')}
+        />
+      )}
+
+      {/* Toast Notification */}
+      {toast && <Toast message={toast} type={toastType} />}
     </div>
   )
 }
