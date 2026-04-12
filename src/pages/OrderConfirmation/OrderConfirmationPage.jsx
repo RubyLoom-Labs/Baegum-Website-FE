@@ -19,6 +19,47 @@ function Toast({ message, type = 'success' }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// IMAGE LIGHTBOX COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ImageLightbox({ imageUrl, onClose }) {
+  if (!imageUrl) return null;
+
+  return (
+    <>
+      <div 
+        className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center"
+        onClick={onClose}
+      />
+      <div 
+        className="fixed inset-0 z-[71] flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <div 
+          className="relative max-w-2xl max-h-[90vh]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <img 
+            src={imageUrl}
+            alt="Review photo"
+            className="max-w-full max-h-[90vh] object-contain rounded"
+          />
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 w-10 h-10 bg-white hover:bg-gray-100 rounded-full flex items-center justify-center shadow-lg transition-colors"
+            title="Close"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // REUSABLE BITS  (same style as Profile + Checkout)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -257,6 +298,7 @@ export default function OrderConfirmationPage() {
   const [toastType, setToastType] = useState('success');
   const [reviews, setReviews] = useState({}); // Map of product_id -> review
   const [loadingReviews, setLoadingReviews] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const showToast = (msg, type = 'success') => {
     setToast(msg);
@@ -459,14 +501,18 @@ export default function OrderConfirmationPage() {
                           {reviews[item.product_id || item.id].photos && reviews[item.product_id || item.id].photos.length > 0 && (
                             <div className="flex gap-2 mt-2 flex-wrap">
                               {reviews[item.product_id || item.id].photos.map((photo, idx) => (
-                                <div key={idx} className="w-12 h-12 bg-gray-100 rounded-sm overflow-hidden border border-gray-200">
+                                <button
+                                  key={idx}
+                                  onClick={() => setSelectedImage(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/storage/${photo}`)}
+                                  className="w-12 h-12 bg-gray-100 rounded-sm overflow-hidden border border-gray-200 hover:border-gray-400 hover:scale-110 transition-all cursor-pointer flex-shrink-0"
+                                >
                                   <img
                                     src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/storage/${photo}`}
                                     alt={`Review photo ${idx}`}
                                     className="w-full h-full object-cover"
                                     onError={(e) => { e.target.src = ''; e.target.style.display = 'none'; }}
                                   />
-                                </div>
+                                </button>
                               ))}
                             </div>
                           )}
@@ -619,6 +665,12 @@ export default function OrderConfirmationPage() {
           onError={(error) => showToast('Failed to submit review. Please try again.', 'error')}
         />
       )}
+
+      {/* Image Lightbox */}
+      <ImageLightbox 
+        imageUrl={selectedImage}
+        onClose={() => setSelectedImage(null)}
+      />
 
       {/* Toast Notification */}
       {toast && <Toast message={toast} type={toastType} />}

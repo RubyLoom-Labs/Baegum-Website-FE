@@ -7,7 +7,8 @@ import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
 import { getItems } from "@/services/filterItems";
 import { addToCart as addToCartAPI } from "@/services/cart";
-import { submitProductReview } from "@/services/product";
+import { submitProductReview, getProductDetail } from "@/services/product";
+import { transformProductData } from "@/utils/productTransformer";
 
 import wishlistIcon from "@/assets/icons/wishlist.svg";
 
@@ -83,7 +84,18 @@ export default function StandardProductPage({ product, categoryId }) {
       });
       showToast('Thank you! Your review has been submitted successfully.');
       setShowReviewModal(false);
-      // Optionally refetch reviews here if needed
+      
+      // Refetch product data to show the newly added review
+      try {
+        const apiData = await getProductDetail(product.id);
+        const transformedProduct = transformProductData(apiData);
+        if (transformedProduct?.reviews) {
+          setReviews(transformedProduct.reviews);
+          console.log('Reviews updated:', transformedProduct.reviews);
+        }
+      } catch (err) {
+        console.error('Failed to refetch reviews:', err);
+      }
     } catch (error) {
       console.error('Failed to submit review:', error);
       showToast('Failed to submit review');

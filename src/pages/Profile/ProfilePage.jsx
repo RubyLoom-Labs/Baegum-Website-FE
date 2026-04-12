@@ -932,7 +932,7 @@ export default function ProfilePage() {
         showSuccessMessage: false
       };
 
-      navigate('/order-confirmation', { state: transformedOrder });
+      navigate('/order-details', { state: transformedOrder });
     } catch (error) {
       console.error('Error viewing order:', error);
       showToast('Failed to load order details');

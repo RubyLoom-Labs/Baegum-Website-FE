@@ -61,6 +61,7 @@ function App() {
                   {/* Order flow */}
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
+                  <Route path="/order-details" element={<OrderConfirmationPage />} />
 
                   {/* 404 */}
                   <Route path="*" element={<NotFound />} />

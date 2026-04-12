@@ -36,7 +36,10 @@ function StarRow({ rating, size = 16, interactive = false, onChange }) {
   const display = interactive ? (hovered || rating) : rating;
 
   return (
-    <div className="flex items-center gap-0.5">
+    <div 
+      className="flex items-center gap-0.5 relative"
+      onMouseLeave={interactive ? () => setHovered(0) : undefined}
+    >
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
@@ -46,13 +49,6 @@ function StarRow({ rating, size = 16, interactive = false, onChange }) {
           onHover={interactive ? () => setHovered(i) : undefined}
         />
       ))}
-      {interactive && (
-        <span
-          className="ml-1"
-          onMouseLeave={() => setHovered(0)}
-          style={{ position: "absolute", width: `${size * 5 + 8}px`, height: size }}
-        />
-      )}
     </div>
   );
 }
