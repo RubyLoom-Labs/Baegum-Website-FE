@@ -27,19 +27,19 @@ function ImageLightbox({ imageUrl, onClose }) {
 
   return (
     <>
-      <div 
+      <div
         className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center"
         onClick={onClose}
       />
-      <div 
+      <div
         className="fixed inset-0 z-[71] flex items-center justify-center p-4"
         onClick={onClose}
       >
-        <div 
+        <div
           className="relative max-w-2xl max-h-[90vh]"
           onClick={(e) => e.stopPropagation()}
         >
-          <img 
+          <img
             src={imageUrl}
             alt="Review photo"
             className="max-w-full max-h-[90vh] object-contain rounded"
@@ -667,7 +667,7 @@ export default function OrderConfirmationPage() {
       )}
 
       {/* Image Lightbox */}
-      <ImageLightbox 
+      <ImageLightbox
         imageUrl={selectedImage}
         onClose={() => setSelectedImage(null)}
       />

@@ -36,7 +36,7 @@ function StarRow({ rating, size = 16, interactive = false, onChange }) {
   const display = interactive ? (hovered || rating) : rating;
 
   return (
-    <div 
+    <div
       className="flex items-center gap-0.5 relative"
       onMouseLeave={interactive ? () => setHovered(0) : undefined}
     >

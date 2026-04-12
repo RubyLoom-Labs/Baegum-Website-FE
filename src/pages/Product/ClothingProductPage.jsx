@@ -85,7 +85,7 @@ export default function ClothingProductPage({ product, categoryId }) {
       });
       showToast('Thank you! Your review has been submitted successfully.');
       setShowReviewModal(false);
-      
+
       // Refetch product data to show the newly added review
       try {
         const apiData = await getProductDetail(product.id);

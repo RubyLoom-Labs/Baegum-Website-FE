@@ -83,16 +83,22 @@ function IconButton({ defaultSrc, hoverSrc, size = 20, className = "", badge, on
 
 // ── Logo ─────────────────────────────────────────────────────────────────────
 
-function Logo({ height = 22, className = "" }) {
+function Logo({ height = 22, className = "", onClick }) {
   return (
-    <img
-      src={logoSrc}
-      alt="BAEGUM"
-      height={height}
-      style={{ height, width: "auto", display: "block" }}
-      className={`select-none ${className}`}
-      draggable={false}
-    />
+    <button
+      onClick={onClick}
+      className={`bg-none border-none p-0 cursor-pointer hover:opacity-80 transition-opacity select-none ${className}`}
+      aria-label="Home"
+    >
+      <img
+        src={logoSrc}
+        alt="BAEGUM"
+        height={height}
+        style={{ height, width: "auto", display: "block" }}
+        className="select-none"
+        draggable={false}
+      />
+    </button>
   );
 }
 
@@ -102,7 +108,7 @@ function Logo({ height = 22, className = "" }) {
 //  leftSlot   — what to render on the left  (icons or just spacing)
 //  rightSlot  — what to render on the right (icons or just spacing)
 
-function MobileTopBar({ leftSlot, rightSlot, headerShadow }) {
+function MobileTopBar({ leftSlot, rightSlot, headerShadow, onLogoClick }) {
   return (
     <div className={`flex items-center justify-between px-4 py-8 h-14 bg-white ${headerShadow}`}>
       {/* Left slot — fixed width so logo always centres */}
@@ -111,7 +117,7 @@ function MobileTopBar({ leftSlot, rightSlot, headerShadow }) {
       </div>
 
       {/* Logo — always centred */}
-      <Logo height={19} />
+      <Logo height={19} onClick={onLogoClick} />
 
       {/* Right slot — fixed width, right-aligned */}
       <div className="flex items-center justify-end gap-3 w-16">
@@ -192,7 +198,7 @@ export default function Header() {
 
           {/* Logo — centred */}
           <div className="absolute left-1/2 -translate-x-1/2">
-            <Logo height={22} />
+            <Logo height={22} onClick={() => navigate('/')} />
           </div>
 
           {/* Right icons */}
@@ -246,6 +252,7 @@ export default function Header() {
       >
         <MobileTopBar
           headerShadow=""
+          onLogoClick={() => navigate('/')}
           leftSlot={
             <>
               <IconButton
@@ -280,6 +287,7 @@ export default function Header() {
         {/* Same top bar layout — nothing left, close button right */}
         <MobileTopBar
           headerShadow="border-b border-gray-100"
+          onLogoClick={() => { navigate('/'); closeAll(); }}
           leftSlot={null}
           rightSlot={
             <IconButton
@@ -335,6 +343,7 @@ export default function Header() {
         {/* Same top bar — close button right, nothing left */}
         <MobileTopBar
           headerShadow="border-b border-gray-100"
+          onLogoClick={() => { navigate('/'); closeAll(); }}
           leftSlot={null}
           rightSlot={
             <IconButton

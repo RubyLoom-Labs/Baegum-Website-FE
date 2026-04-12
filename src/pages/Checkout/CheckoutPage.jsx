@@ -304,7 +304,7 @@ export default function CheckoutPage() {
 
       // Extract orderId from response - try multiple structures
       let orderId = null
-      
+
       if (response?.data?.order?.id) {
         orderId = response.data.order.id
       } else if (response?.data?.id) {
