@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '@/context/CartContext'
 import { getUserAddresses, createUserAddress } from '@/services/user'
+import { updateCartStatus } from '@/services/cart'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SAMPLE DATA — replace with real user data from API/context
@@ -294,20 +295,28 @@ export default function CheckoutPage() {
     setShowAddAddress(false)
   }
 
-  const handlePlaceOrder = () => {
-    // Pass order details to confirmation page via state
-    navigate('/order-confirmation', {
-      state: {
-        items,
-        address:       selectedAddress,
-        paymentMethod,
-        card:          paymentMethod === 'card' ? selectedCard : null,
-        subtotal:      total,
-        shippingFee,
-        orderTotal,
-        orderId:       `ORD-${Date.now()}`,
-      }
-    })
+  const handlePlaceOrder = async () => {
+    try {
+      // Update cart status to 2 (checked out/completed) in backend
+      await updateCartStatus(2)
+      
+      // Pass order details to confirmation page via state
+      navigate('/order-confirmation', {
+        state: {
+          items,
+          address:       selectedAddress,
+          paymentMethod,
+          card:          paymentMethod === 'card' ? selectedCard : null,
+          subtotal:      total,
+          shippingFee,
+          orderTotal,
+          orderId:       `ORD-${Date.now()}`,
+        }
+      })
+    } catch (error) {
+      console.error('Failed to update cart status:', error)
+      alert('Failed to process order. Please try again.')
+    }
   }
 
   if (items.length === 0) {

@@ -208,7 +208,7 @@ export default function StandardProductPage({ product, categoryId }) {
       // Combination is invalid, don't add to cart
       return;
     }
-    
+
     setSizeError(false);
     setColorError(false);
     setCartError(null);
@@ -219,19 +219,19 @@ export default function StandardProductPage({ product, categoryId }) {
       const selectedVariant = product.productVariants?.find(variant => {
         const criteria = variant.criteria || [];
         const matches = [];
-        
+
         if (selectedSizeId) {
           matches.push(criteria.some(
             c => c.criteria_type?.code === 'size' && c.criteria_value_id === selectedSizeId
           ));
         }
-        
+
         if (selectedColorId) {
           matches.push(criteria.some(
             c => c.criteria_type?.code === 'color' && c.criteria_value_id === selectedColorId
           ));
         }
-        
+
         return matches.length > 0 && matches.every(m => m === true);
       });
 
@@ -259,7 +259,7 @@ export default function StandardProductPage({ product, categoryId }) {
         stock: selectedVariant?.stock || 0,
         cart_item_id: apiData.id, // Store same ID for clarity
       });
-      
+
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
       openCart();

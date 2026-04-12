@@ -63,3 +63,13 @@ export function clearCart() {
 export function getCartSummary() {
   return get('/api/users/cart/summary');
 }
+
+/**
+ * Update cart status
+ * PUT /api/users/cart/status
+ * @param {number} status - New cart status (e.g., 2 for completed/checked out)
+ * @returns {Promise} Updated cart with new status
+ */
+export function updateCartStatus(status) {
+  return put('/api/users/cart/status', { status });
+}

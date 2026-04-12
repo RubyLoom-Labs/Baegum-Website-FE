@@ -22,17 +22,17 @@ export function CartProvider({ children }) {
       try {
         setLoadingCart(true);
         const response = await fetchCartItems();
-        
+
         // Handle both array and paginated response formats
         const cartItemsArray = response.data || response || [];
-        
+
         // Transform API response to frontend cart format
         const mappedItems = cartItemsArray.map(item => {
           const quantity = item.quantity || 1;
           const variantStock = item.product_variant?.stock || 0;
           // Ensure stock is at least equal to current quantity
           const stock = Math.max(variantStock, quantity);
-          
+
           return {
             id: item.id,
             product_id: item.product_id,
@@ -45,7 +45,7 @@ export function CartProvider({ children }) {
             cart_item_id: item.id, // Store original cart item ID for updates/deletes
           };
         });
-        
+
         setItems(mappedItems);
       } catch (error) {
         console.error("Failed to sync cart from backend:", error);
@@ -64,9 +64,9 @@ export function CartProvider({ children }) {
   // Increase quantity with stock validation and backend sync
   const increaseQty = async (id) => {
     const itemToUpdate = items.find(item => item.id === id);
-    
+
     if (!itemToUpdate) return;
-    
+
     // Validate stock before increasing - prevent qty from exceeding stock
     const newQty = itemToUpdate.qty + 1;
     if (newQty > itemToUpdate.stock) {
@@ -78,12 +78,12 @@ export function CartProvider({ children }) {
     try {
       setUpdateError(null);
       // Update backend first
-      await updateCartItemAPI(itemToUpdate.cart_item_id, { 
+      await updateCartItemAPI(itemToUpdate.cart_item_id, {
         quantity: newQty,
         product_id: itemToUpdate.product_id,
         variant_id: itemToUpdate.variant_id
       });
-      
+
       // Then update frontend
       setItems((prev) =>
         prev.map((item) => item.id === id ? { ...item, qty: item.qty + 1 } : item)
@@ -98,18 +98,18 @@ export function CartProvider({ children }) {
   // Decrease quantity with backend sync
   const decreaseQty = async (id) => {
     const itemToUpdate = items.find(item => item.id === id);
-    
+
     if (!itemToUpdate || itemToUpdate.qty <= 1) return;
 
     try {
       setUpdateError(null);
       // Update backend first
-      await updateCartItemAPI(itemToUpdate.cart_item_id, { 
+      await updateCartItemAPI(itemToUpdate.cart_item_id, {
         quantity: itemToUpdate.qty - 1,
         product_id: itemToUpdate.product_id,
         variant_id: itemToUpdate.variant_id
       });
-      
+
       // Then update frontend
       setItems((prev) =>
         prev.map((item) => item.id === id ? { ...item, qty: item.qty - 1 } : item)
@@ -125,7 +125,7 @@ export function CartProvider({ children }) {
   // Remove item from cart with backend sync
   const removeItem = async (id) => {
     const itemToRemove = items.find(item => item.id === id);
-    
+
     if (!itemToRemove) return;
 
     try {
@@ -135,7 +135,7 @@ export function CartProvider({ children }) {
         product_id: itemToRemove.product_id,
         variant_id: itemToRemove.variant_id
       });
-      
+
       // Then remove from frontend
       setItems((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
@@ -148,24 +148,24 @@ export function CartProvider({ children }) {
   const addItem = (product) => {
     setItems((prev) => {
       // Look for existing item with same product_id and variant_id
-      const existing = prev.find((i) => 
+      const existing = prev.find((i) =>
         i.product_id === product.product_id && i.variant_id === product.variant_id
       );
       if (existing) {
         // Don't allow inlining - keep variant stock as is
         const newQty = existing.qty + 1;
         const maxStock = existing.stock || 0;
-        
+
         // Prevent increasing if would exceed stock
         if (newQty > maxStock) {
           setUpdateError(`Cannot exceed stock. Maximum available: ${maxStock}`);
           setTimeout(() => setUpdateError(null), 3000);
           return prev; // Don't change
         }
-        
+
         return prev.map((i) =>
-          i.product_id === product.product_id && i.variant_id === product.variant_id 
-            ? { ...i, qty: newQty } 
+          i.product_id === product.product_id && i.variant_id === product.variant_id
+            ? { ...i, qty: newQty }
             : i
         );
       }

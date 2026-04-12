@@ -207,7 +207,7 @@ export default function ClothingProductPage({ product, categoryId }) {
     if (combinationError) {
       return;
     }
-    
+
     setSizeError(false);
     setColorError(false);
     setCartError(null);
@@ -218,19 +218,19 @@ export default function ClothingProductPage({ product, categoryId }) {
       const selectedVariant = product.productVariants?.find(variant => {
         const criteria = variant.criteria || [];
         const matches = [];
-        
+
         if (selectedSizeId) {
           matches.push(criteria.some(
             c => c.criteria_type?.code === 'size' && c.criteria_value_id === selectedSizeId
           ));
         }
-        
+
         if (selectedColorId) {
           matches.push(criteria.some(
             c => c.criteria_type?.code === 'color' && c.criteria_value_id === selectedColorId
           ));
         }
-        
+
         return matches.length > 0 && matches.every(m => m === true);
       });
 
