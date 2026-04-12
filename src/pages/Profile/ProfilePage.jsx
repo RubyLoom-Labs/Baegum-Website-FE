@@ -635,10 +635,28 @@ export default function ProfilePage() {
         const formattedReturns = [];
 
         ordersList.forEach(order => {
-          // Format date from date_time (format: "2026-04-12 08:38:36")
-          const orderDate = order.date_time
-            ? order.date_time.split(' ')[0]
-            : '';
+          // Format date/time from API response
+          // Input formats: "2026-04-12 08:38:36" or "2026-04-12T13:57:06.000000Z"
+          const formatDateTime = (dateString) => {
+            if (!dateString) return '';
+            
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+            
+            // Format as "Apr 12, 2026 at 1:57 PM"
+            const options = {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            };
+            
+            return date.toLocaleDateString('en-US', options).replace(',', ', at');
+          };
+
+          const orderDate = formatDateTime(order.date_time);
 
           // Get total amount
           const totalAmount = parseFloat(order.total_amount || 0);
