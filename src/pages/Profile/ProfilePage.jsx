@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import ProductCard from "@/components/ui/ProductCard";
-import { getUserAddresses, createUserAddress, setDefaultAddress, deleteUserAddress, updateUserProfile, getUserProfile } from "@/services/user";
+import { getUserAddresses, createUserAddress, setDefaultAddress, deleteUserAddress, updateUserProfile, getUserProfile, getCurrentOrders } from "@/services/user";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SAMPLE DATA
@@ -393,10 +393,12 @@ function OrderRow({ item, type }) {
         <p className="text-[13px] font-medium text-[#1a1a1a]">{item.name}</p>
         <p className="text-[11px] text-gray-500 font-light mt-0.5 leading-relaxed">
           {item.price}
-          {item.orderDate    && <> &nbsp;|&nbsp; Order Date | {item.orderDate}</>}
-          {item.shippingDate && <> &nbsp;|&nbsp; Shipping Date | {item.shippingDate}</>}
-          {item.arrivedDate  && <> &nbsp;|&nbsp; Arrived Date | {item.arrivedDate}</>}
-          {item.reason       && <> &nbsp;|&nbsp; {item.reason}</>}
+          {item.orderDate && <> &nbsp;|&nbsp; {item.orderDate}</>}
+          {type === "current" && item.shippingDate && (
+            <> &nbsp;|&nbsp; <span className="text-gray-400">To: {item.shippingDate}</span></>
+          )}
+          {item.arrivedDate && <> &nbsp;|&nbsp; Arrived: {item.arrivedDate}</>}
+          {item.reason && <> &nbsp;|&nbsp; {item.reason}</>}
         </p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
@@ -465,6 +467,8 @@ export default function ProfilePage() {
   const [loadingAddresses,  setLoadingAddresses]  = useState(true);
   const [addressError,      setAddressError]      = useState(null);
   const [loadingProfile,    setLoadingProfile]    = useState(true);
+  const [currentOrders,     setCurrentOrders]     = useState([]);
+  const [loadingOrders,     setLoadingOrders]     = useState(true);
 
   const refs = Object.fromEntries(ALL_SECTIONS.map((id) => [id, useRef(null)]));
 
@@ -558,6 +562,77 @@ export default function ProfilePage() {
 
     if (isLoggedIn) {
       fetchProfile();
+    }
+  }, [isLoggedIn]);
+
+  // Fetch current orders on mount
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoadingOrders(true);
+        const response = await getCurrentOrders();
+
+        // Handle API response
+        let ordersList = [];
+        if (response.data && Array.isArray(response.data.data)) {
+          ordersList = response.data.data;
+        } else if (response.data && Array.isArray(response.data)) {
+          ordersList = response.data;
+        } else if (Array.isArray(response)) {
+          ordersList = response;
+        }
+
+        // Format orders from API response
+        const formattedOrders = ordersList.map(order => {
+          // Get first item name from order_items array
+          const firstItem = order.order_items && order.order_items.length > 0
+            ? order.order_items[0]
+            : null;
+
+          // Get address details
+          const address = order.address_detail || {};
+          const addressStr = address.street1
+            ? `${address.street1}${address.street2 ? ', ' + address.street2 : ''}, ${address.city}, ${address.district}, ${address.province}`
+            : 'Address not available';
+
+          // Format date from date_time (format: "2026-04-12 08:38:36")
+          const orderDate = order.date_time
+            ? order.date_time.split(' ')[0]
+            : '';
+
+          // Get total amount
+          const price = order.total_amount
+            ? `Rs.${parseFloat(order.total_amount).toFixed(2)}`
+            : 'N/A';
+
+          // Get item count
+          const itemCount = order.order_items ? order.order_items.length : 0;
+
+          return {
+            id: order.id,
+            name: firstItem
+              ? `${firstItem.product_id ? '#' + firstItem.product_id : 'Product'} (${itemCount} ${itemCount === 1 ? 'item' : 'items'})`
+              : ` #${order.id} (${itemCount} ${itemCount === 1 ? 'item' : 'items'})`,
+            price: price,
+            orderDate: orderDate,
+            shippingDate: addressStr,
+            image: null,
+            itemCount: itemCount,
+            totalAmount: order.total_amount
+          };
+        });
+
+        setCurrentOrders(formattedOrders);
+      } catch (error) {
+        console.error('Failed to fetch current orders:', error);
+        setCurrentOrders([]);
+      } finally {
+        setLoadingOrders(false);
+      }
+    };
+
+    if (isLoggedIn) {
+      fetchOrders();
     }
   }, [isLoggedIn]);
 
@@ -714,7 +789,7 @@ export default function ProfilePage() {
               <div>
                 <NavGroup label="My Orders" target="orders" />
                 <div className="flex flex-col gap-0.5 pl-1">
-                  <NavLink label="Current Orders"   target="current-orders"   badge={CURRENT_ORDERS.length} />
+                  <NavLink label="Current Orders"   target="current-orders"   badge={currentOrders.length} />
                   <NavLink label="My Returns"       target="my-returns"       />
                   <NavLink label="My Cancellations" target="my-cancellations" />
                   <NavLink label="My Reviews"       target="my-reviews"       badge={REVIEWS_PENDING.length} />
@@ -910,7 +985,13 @@ export default function ProfilePage() {
                 <div ref={refs["current-orders"]}>
                   <Card>
                     <CardTitle title="Current Orders" />
-                    {CURRENT_ORDERS.map((o) => <OrderRow key={o.id} item={o} type="current" />)}
+                    {loadingOrders ? (
+                      <p className="text-[13px] text-gray-500 font-light py-8">Loading your orders...</p>
+                    ) : currentOrders.length === 0 ? (
+                      <p className="text-[13px] text-gray-500 font-light py-4">No current orders</p>
+                    ) : (
+                      currentOrders.map((o) => <OrderRow key={o.id} item={o} type="current" />)
+                    )}
                   </Card>
                 </div>
 

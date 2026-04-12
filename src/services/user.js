@@ -73,3 +73,12 @@ export function updateUserProfile(profileData) {
 export function getUserProfile() {
   return get('/api/users/profile');
 }
+
+/**
+ * Get current user's active orders
+ * GET /api/users/orders/current
+ * @returns {Promise} Array of current orders
+ */
+export function getCurrentOrders() {
+  return get('/api/users/orders/current');
+}
