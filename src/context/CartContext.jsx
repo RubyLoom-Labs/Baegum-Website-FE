@@ -60,6 +60,10 @@ export function CartProvider({ children }) {
 
   const openCart  = () => setCartOpen(true);
   const closeCart = () => setCartOpen(false);
+  const clearCart = () => {
+    setItems([]);
+    setCartOpen(false);
+  };
 
   // Increase quantity with stock validation and backend sync
   const increaseQty = async (id) => {
@@ -179,7 +183,7 @@ export function CartProvider({ children }) {
 
   return (
     <CartContext.Provider value={{
-      cartOpen, openCart, closeCart,
+      cartOpen, openCart, closeCart, clearCart,
       items, addItem, removeItem, increaseQty, decreaseQty,
       total, count, loadingCart, updateError,
     }}>

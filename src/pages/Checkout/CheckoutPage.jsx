@@ -212,7 +212,7 @@ function AddAddressForm({ onSave, onCancel, isLoading = false }) {
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
-  const { items, total, closeCart } = useCart()
+  const { items, total, closeCart, clearCart } = useCart()
 
   const [addresses,         setAddresses]         = useState([])
   const [selectedAddressId,  setSelectedAddressId] = useState(null)
@@ -299,7 +299,10 @@ export default function CheckoutPage() {
     try {
       // Update cart status to 2 (checked out/completed) in backend
       await updateCartStatus(2)
-      
+
+      // Clear the cart items and close the cart drawer
+      clearCart()
+
       // Pass order details to confirmation page via state
       navigate('/order-confirmation', {
         state: {
