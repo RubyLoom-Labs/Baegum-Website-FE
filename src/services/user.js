@@ -54,3 +54,22 @@ export function deleteUserAddress(addressId) {
 export function setDefaultAddress(addressId) {
   return put(`/api/users/addresses/${addressId}/default`, {});
 }
+
+/**
+ * Update user profile
+ * PUT /api/users/profile
+ * @param {object} profileData - Profile details (firstName, lastName, email, phone, dob, gender)
+ * @returns {Promise} Updated user object
+ */
+export function updateUserProfile(profileData) {
+  return put('/api/users/profile', profileData);
+}
+
+/**
+ * Get current user's profile
+ * GET /api/users/profile
+ * @returns {Promise} Current user's profile object
+ */
+export function getUserProfile() {
+  return get('/api/users/profile');
+}

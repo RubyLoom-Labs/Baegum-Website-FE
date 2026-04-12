@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import ProductCard from "@/components/ui/ProductCard";
-import { getUserAddresses, createUserAddress, setDefaultAddress, deleteUserAddress } from "@/services/user";
+import { getUserAddresses, createUserAddress, setDefaultAddress, deleteUserAddress, updateUserProfile, getUserProfile } from "@/services/user";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SAMPLE DATA
@@ -284,13 +284,55 @@ function AddAddressForm({ onSave, onCancel, isSaving = false }) {
 // EDIT PROFILE MODAL
 // ─────────────────────────────────────────────────────────────────────────────
 
-function EditProfileModal({ user, onClose, onSave }) {
+function EditProfileModal({ user, onClose, onSave, showToast }) {
   const [form, setForm] = useState({
     firstName: user.firstName, lastName: user.lastName,
     email: user.email, phone: user.phone || "",
     dob: user.dob || "", gender: user.gender || "",
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+
+  const handleSave = async () => {
+    try {
+      setError(null);
+      setIsLoading(true);
+
+      // Prepare profile data for API
+      const profileData = {
+        first_name: form.firstName,
+        last_name: form.lastName,
+        email: form.email,
+        phone: form.phone,
+        dob: form.dob,
+        gender: form.gender,
+      };
+
+      // Call API to update profile
+      const response = await updateUserProfile(profileData);
+
+      // Format response for local state
+      const updatedUser = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        phone: form.phone,
+        dob: form.dob,
+        gender: form.gender,
+      };
+
+      onSave(updatedUser);
+      showToast("Profile updated successfully");
+      onClose();
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      setError(err.message || 'Failed to update profile');
+      showToast('Failed to update profile');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <>
@@ -303,6 +345,7 @@ function EditProfileModal({ user, onClose, onSave }) {
             <button onClick={onClose} className="text-gray-400 hover:text-[#1a1a1a] transition-colors"><CloseIcon /></button>
           </div>
           <div className="flex flex-col gap-3.5">
+            {error && <p className="text-[11px] text-red-500 bg-red-50 p-3 rounded">{error}</p>}
             <div className="flex gap-3">
               <Field label="First Name" placeholder="First Name" value={form.firstName} onChange={set("firstName")} half />
               <Field label="Last Name"  placeholder="Last Name"  value={form.lastName}  onChange={set("lastName")}  half />
@@ -312,16 +355,22 @@ function EditProfileModal({ user, onClose, onSave }) {
             <Field label="Date of Birth" type="date"  placeholder=""      value={form.dob}   onChange={set("dob")}   />
             <div>
               <p className="text-[11px] text-gray-500 font-light mb-1 tracking-wide">Gender</p>
-              <select value={form.gender} onChange={set("gender")}
+              <select value={form.gender} onChange={set("gender")} disabled={isLoading}
                 className="w-full border border-gray-300 rounded px-4 py-2.5 text-[13px]
-                           text-[#1a1a1a] font-light outline-none focus:border-gray-500">
+                           text-[#1a1a1a] font-light outline-none focus:border-gray-500
+                           disabled:bg-gray-100 disabled:cursor-not-allowed">
                 <option value="">Select gender</option>
-                <option>Female</option><option>Male</option><option>Prefer not to say</option>
+                <option>Female</option><option>Male</option>
               </select>
             </div>
             <div className="flex gap-3 mt-1">
               <BtnOutline label="Cancel" onClick={onClose} />
-              <BtnPrimary label="Save Changes" onClick={() => { onSave(form); onClose(); }} />
+              <button onClick={handleSave} disabled={isLoading}
+                className="flex-1 bg-[#1a1a1a] hover:bg-gray-800 active:bg-gray-700
+                           text-white text-[13px] font-medium py-3.5 tracking-wide
+                           transition-colors disabled:opacity-50 rounded-sm">
+                {isLoading ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </div>
         </div>
@@ -415,6 +464,7 @@ export default function ProfilePage() {
   const [activeId,          setActiveId]          = useState("my-profile");
   const [loadingAddresses,  setLoadingAddresses]  = useState(true);
   const [addressError,      setAddressError]      = useState(null);
+  const [loadingProfile,    setLoadingProfile]    = useState(true);
 
   const refs = Object.fromEntries(ALL_SECTIONS.map((id) => [id, useRef(null)]));
 
@@ -469,6 +519,47 @@ export default function ProfilePage() {
 
     fetchAddresses();
   }, []);
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoadingProfile(true);
+        const response = await getUserProfile();
+
+        // Handle API response
+        let profileData = null;
+        if (response.data) {
+          profileData = response.data;
+        } else {
+          profileData = response;
+        }
+
+        // Format and set user profile
+        if (profileData) {
+          const updatedUser = {
+            firstName: profileData.first_name || profileData.firstName || '',
+            lastName: profileData.last_name || profileData.lastName || '',
+            email: profileData.email || '',
+            phone: profileData.phone || '',
+            dob: profileData.dob || '',
+            gender: profileData.gender || ''
+          };
+
+          setUser(updatedUser);
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+        // Keep initial user data if fetch fails
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    if (isLoggedIn) {
+      fetchProfile();
+    }
+  }, [isLoggedIn]);
 
   // Scroll to section with navbar offset
   const scrollTo = (id) => {
@@ -655,22 +746,42 @@ export default function ProfilePage() {
                 <div ref={refs["my-profile"]}>
                   <Card>
                     <CardTitle title="Personal Profile" />
-                    <div className="flex flex-wrap gap-x-16 gap-y-2 text-[13px] font-light text-gray-700">
-                      <p>
-                        <span className="font-semibold text-[#1a1a1a]">Name:</span>{" "}
-                        {user.firstName} {user.lastName}{" "}
-                        <span className="mx-1 text-gray-300">|</span>
-                        <button onClick={() => setShowEditProf(true)}
-                          className="text-blue-500 hover:underline underline-offset-2 text-[12px]">
-                          Edit
-                        </button>
-                      </p>
-                      <p>
-                        <span className="font-semibold text-[#1a1a1a]">Email:</span>{" "}
-                        {user.email}
-                      </p>
+                    <div className="flex flex-col gap-4 text-[13px] font-light text-gray-700">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[11px] text-gray-500 font-light mb-1">First Name</p>
+                          <p className="text-[13px] text-[#1a1a1a]">{user.firstName || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-gray-500 font-light mb-1">Last Name</p>
+                          <p className="text-[13px] text-[#1a1a1a]">{user.lastName || '-'}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-gray-500 font-light mb-1">Email Address</p>
+                        <p className="text-[13px] text-[#1a1a1a]">{user.email || '-'}</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[11px] text-gray-500 font-light mb-1">Phone Number</p>
+                          <p className="text-[13px] text-[#1a1a1a]">{user.phone || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-gray-500 font-light mb-1">Date of Birth</p>
+                          <p className="text-[13px] text-[#1a1a1a]">{user.dob || '-'}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-gray-500 font-light mb-1">Gender</p>
+                        <p className="text-[13px] text-[#1a1a1a]">{user.gender || '-'}</p>
+                      </div>
                     </div>
-                    <div className="mt-6 pt-6 border-t border-gray-200">
+                    <div className="mt-6 pt-6 border-t border-gray-200 flex items-center gap-3">
+                      <button onClick={() => setShowEditProf(true)}
+                        className="px-5 py-2 border border-gray-300 text-[#1a1a1a] text-[12px] font-light
+                                 hover:border-[#1a1a1a] hover:bg-gray-50 transition-colors rounded-sm">
+                        Edit Profile
+                      </button>
                       <button
                         onClick={() => {
                           logout();
@@ -857,7 +968,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Modals */}
-      {showEditProf && <EditProfileModal onClose={() => setShowEditProf(false)} onSave={(f) => { setUser(f); showToast("Profile updated"); }} user={user} />}
+      {showEditProf && <EditProfileModal onClose={() => setShowEditProf(false)} onSave={(f) => { setUser(f); }} user={user} showToast={showToast} />}
 
       {toast && <Toast message={toast} />}
     </div>
