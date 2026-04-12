@@ -298,7 +298,33 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     try {
       // Update cart status to 2 (checked out/completed) in backend
-      await updateCartStatus(2)
+      const response = await updateCartStatus(2)
+
+      console.log('updateCartStatus full response:', response)
+
+      // Extract orderId from response - try multiple structures
+      let orderId = null
+      
+      if (response?.data?.order?.id) {
+        orderId = response.data.order.id
+      } else if (response?.data?.id) {
+        orderId = response.data.id
+      } else if (response?.data?.order_id) {
+        orderId = response.data.order_id
+      } else if (response?.order?.id) {
+        orderId = response.order.id
+      } else if (response?.id) {
+        orderId = response.id
+      } else if (response?.order_id) {
+        orderId = response.order_id
+      }
+
+      console.log('Extracted orderId:', orderId)
+
+      // Format orderId with ORD- prefix if it's just a number
+      if (orderId && !String(orderId).startsWith('ORD')) {
+        orderId = `ORD-${orderId}`
+      }
 
       // Clear the cart items and close the cart drawer
       clearCart()
@@ -313,7 +339,7 @@ export default function CheckoutPage() {
           subtotal:      total,
           shippingFee,
           orderTotal,
-          orderId:       `ORD-${Date.now()}`,
+          orderId:       orderId || `ORD-${Date.now()}`,
         }
       })
     } catch (error) {
