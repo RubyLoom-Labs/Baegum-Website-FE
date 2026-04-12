@@ -2,18 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import ProductCard from "@/components/ui/ProductCard";
+import { getUserAddresses, createUserAddress, setDefaultAddress, deleteUserAddress } from "@/services/user";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SAMPLE DATA
 // ─────────────────────────────────────────────────────────────────────────────
 
-const INIT_USER = { firstName: "Diunura", lastName: "Honsaje", email: "du.********@gmail.com", phone: "", dob: "", gender: "" };
 
-const INIT_ADDRESSES = [
-  { id: 1, isDefault: true,  name: "Daniel Rodriguez", address: "34/B, Wanatha road, Maharagama. Western - Colombo - Greater - Maharagama", phone: "(+94) 713531297" },
-  { id: 2, isDefault: false, name: "Olivia Johnson",   address: "12/A, Temple Lane, Nugegoda Western – Colombo – Greater – Nugegoda",        phone: "(+94) 712345678" },
-  { id: 3, isDefault: false, name: "Olivia Johnson",   address: "78/D, Rose Garden Street, Dehiwala – Western – Colombo – Greater – Dehiwala", phone: "(+94) 712345678" },
-];
+
 
 const INIT_CARDS = [
   { id: 1, isDefault: true,  name: "Daniel Rodriguez", number: "12*************23", expiry: "12/03", brand: "VISA" },
@@ -149,75 +145,139 @@ function Toast({ message }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ADD ADDRESS MODAL
+// ADD ADDRESS INLINE FORM (same style as CheckoutPage)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function AddAddressModal({ onClose, onAdd }) {
-  const [form, setForm] = useState({ fullName:"", phone:"", street:"", city:"", state:"", country:"", postal:"", isDefault:false });
-  const [errors, setErrors] = useState({});
-  const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+function AddAddressForm({ onSave, onCancel, isSaving = false }) {
+  const [form, setForm] = useState({
+    label: '',
+    street1: '',
+    street2: '',
+    city: '',
+    district: '',
+    province: '',
+    postal_code: ''
+  })
+  const [errors, setErrors] = useState({})
+  const [isLoading, setIsLoading] = useState(false)
+  const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }))
 
   const validate = () => {
-    const e = {};
-    if (!form.fullName.trim()) e.fullName = "Required";
-    if (!form.phone.trim())    e.phone    = "Required";
-    if (!form.street.trim())   e.street   = "Required";
-    if (!form.city.trim())     e.city     = "Required";
-    if (!form.country.trim())  e.country  = "Required";
-    return e;
-  };
+    const e = {}
+    if (!form.label.trim())     e.label = 'Address label required'
+    if (!form.street1.trim())   e.street1 = 'Street address required'
+    if (!form.city.trim())      e.city = 'City required'
+    if (!form.district.trim())  e.district = 'District required'
+    if (!form.province.trim())  e.province = 'Province required'
+    return e
+  }
 
-  const handleAdd = () => {
-    const e = validate(); setErrors(e);
-    if (Object.keys(e).length) return;
-    onAdd(form); onClose();
-  };
+  const handleSave = async () => {
+    const e = validate()
+    setErrors(e)
+    if (Object.keys(e).length) return
+
+    setIsLoading(true)
+    try {
+      // Create address_detail object
+      const addressData = {
+        address_detail: {
+          label: form.label,
+          street1: form.street1,
+          street2: form.street2,
+          city: form.city,
+          district: form.district,
+          province: form.province,
+          postal_code: form.postal_code,
+          status: 'active'
+        },
+        status: 'active'
+      }
+
+      // Call API to create address
+      const result = await createUserAddress(addressData)
+
+      // Format response for display
+      const formattedAddress = {
+        id: result.id,
+        name: form.label,
+        address: `${form.street1}${form.street2 ? ', ' + form.street2 : ''}, ${form.city}, ${form.district}, ${form.province}`,
+        phone: 'N/A',
+        isDefault: false,
+        province: form.province,
+        district: form.district,
+        city: form.city,
+        street1: form.street1,
+        street2: form.street2,
+        postal_code: form.postal_code,
+        label: form.label
+      }
+
+      onSave(formattedAddress)
+    } catch (error) {
+      console.error('Failed to save address:', error)
+      setErrors({ submit: error.message || 'Failed to save address' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
-    <>
-      <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed inset-0 z-[61] flex items-center justify-center px-4">
-        <div className="bg-white w-full max-w-[540px] rounded-sm shadow-xl p-7 max-h-[90vh] overflow-y-auto"
-          onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-start justify-between mb-6">
-            <h3 className="text-[18px] font-light text-[#1a1a1a]">Add New Address</h3>
-            <button onClick={onClose} className="text-gray-400 hover:text-[#1a1a1a] transition-colors"><CloseIcon /></button>
+    <div className="border border-gray-200 rounded-sm p-5 mt-3 bg-gray-50">
+      <p className="text-[13px] font-semibold text-[#1a1a1a] mb-4">Add New Address</p>
+      {errors.submit && <p className="text-[11px] text-red-500 mb-3">{errors.submit}</p>}
+      <div className="flex flex-col gap-3">
+        {/* Address Label */}
+        <div>
+          <Field placeholder="Address Label (e.g., Home, Office)" value={form.label} onChange={set('label')} />
+          {errors.label && <p className="text-[10px] text-red-500 mt-1">{errors.label}</p>}
+        </div>
+
+        {/* Street Addresses */}
+        <div>
+          <Field placeholder="Street Address 1" value={form.street1} onChange={set('street1')} />
+          {errors.street1 && <p className="text-[10px] text-red-500 mt-1">{errors.street1}</p>}
+        </div>
+        <div>
+          <Field placeholder="Street Address 2 (Optional)" value={form.street2} onChange={set('street2')} />
+        </div>
+
+        {/* City and District */}
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <Field placeholder="City" value={form.city} onChange={set('city')} half />
+            {errors.city && <p className="text-[10px] text-red-500 mt-1">{errors.city}</p>}
           </div>
-          <div className="flex flex-col gap-3.5">
-            <p className="text-[13px] font-medium text-[#1a1a1a]">Full Name &amp; Phone Number</p>
-            <div>
-              <Field placeholder="Full Name"    value={form.fullName} onChange={set("fullName")} />
-              {errors.fullName && <p className="text-[11px] text-red-500 mt-1">{errors.fullName}</p>}
-            </div>
-            <div>
-              <Field placeholder="Phone Number" value={form.phone}    onChange={set("phone")} />
-              {errors.phone && <p className="text-[11px] text-red-500 mt-1">{errors.phone}</p>}
-            </div>
-            <p className="text-[13px] font-medium text-[#1a1a1a] mt-1">Address</p>
-            <div>
-              <Field placeholder="Street Address" value={form.street}  onChange={set("street")} />
-              {errors.street && <p className="text-[11px] text-red-500 mt-1">{errors.street}</p>}
-            </div>
-            <div className="flex gap-3">
-              <Field placeholder="City"           value={form.city}    onChange={set("city")}   half />
-              <Field placeholder="State/Province" value={form.state}   onChange={set("state")}  half />
-            </div>
-            <div className="flex gap-3">
-              <Field placeholder="Country"        value={form.country} onChange={set("country")} half />
-              <Field placeholder="Postal Code/Zip" value={form.postal} onChange={set("postal")} half />
-            </div>
-            <label className="flex items-center gap-2.5 cursor-pointer mt-1">
-              <input type="checkbox" checked={form.isDefault}
-                onChange={(e) => setForm((p) => ({ ...p, isDefault: e.target.checked }))}
-                className="w-4 h-4 accent-[#1a1a1a]" />
-              <span className="text-[13px] text-gray-600 font-light">Set as Default Address</span>
-            </label>
-            <div className="mt-1"><BtnPrimary label="Add" onClick={handleAdd} /></div>
+          <div className="flex-1">
+            <Field placeholder="District" value={form.district} onChange={set('district')} half />
+            {errors.district && <p className="text-[10px] text-red-500 mt-1">{errors.district}</p>}
           </div>
         </div>
+
+        {/* Province and Postal Code */}
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <Field placeholder="Province" value={form.province} onChange={set('province')} half />
+            {errors.province && <p className="text-[10px] text-red-500 mt-1">{errors.province}</p>}
+          </div>
+          <div className="flex-1">
+            <Field placeholder="Postal Code" value={form.postal_code} onChange={set('postal_code')} half />
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-2 mt-1">
+          <BtnOutline label="Cancel" onClick={onCancel} />
+          <button onClick={handleSave} disabled={isLoading}
+            className="px-5 py-2 bg-[#1a1a1a] hover:bg-gray-800 text-white text-[12px]
+                       font-medium tracking-wide transition-colors rounded-sm
+                       disabled:opacity-50 disabled:cursor-not-allowed">
+            {isLoading ? 'Saving...' : 'Save Address'}
+          </button>
+        </div>
       </div>
-    </>
-  );
+    </div>
+  )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -346,17 +406,69 @@ export default function ProfilePage() {
     gender: ''
   };
 
-  const [user,         setUser]         = useState(initialUser);
-  const [addresses,    setAddresses]    = useState(INIT_ADDRESSES);
-  const [cards,        setCards]        = useState(INIT_CARDS);
-  const [showAddAddr,  setShowAddAddr]  = useState(false);
-  const [showEditProf, setShowEditProf] = useState(false);
-  const [toast,        setToast]        = useState(null);
-  const [activeId,     setActiveId]     = useState("my-profile");
+  const [user,              setUser]              = useState(initialUser);
+  const [addresses,         setAddresses]         = useState([]);
+  const [cards,             setCards]             = useState(INIT_CARDS);
+  const [showAddAddr,       setShowAddAddr]       = useState(false);
+  const [showEditProf,      setShowEditProf]      = useState(false);
+  const [toast,             setToast]             = useState(null);
+  const [activeId,          setActiveId]          = useState("my-profile");
+  const [loadingAddresses,  setLoadingAddresses]  = useState(true);
+  const [addressError,      setAddressError]      = useState(null);
 
   const refs = Object.fromEntries(ALL_SECTIONS.map((id) => [id, useRef(null)]));
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
+
+  // Fetch user addresses on mount
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      try {
+        setLoadingAddresses(true);
+        setAddressError(null);
+        const response = await getUserAddresses();
+
+        // Handle paginated response
+        let addressList = [];
+        if (response.data && Array.isArray(response.data.data)) {
+          addressList = response.data.data;
+        } else if (response.data && Array.isArray(response.data)) {
+          addressList = response.data;
+        } else if (Array.isArray(response)) {
+          addressList = response;
+        }
+
+        // Format addresses from API response
+        const formattedAddresses = addressList.map(addr => {
+          const detail = addr.address_detail || {};
+          return {
+            id: addr.id,
+            name: detail.label || 'My Address',
+            address: `${detail.street1}${detail.street2 ? ', ' + detail.street2 : ''}, ${detail.city}, ${detail.district}, ${detail.province}`,
+            phone: addr.phone || 'N/A',
+            isDefault: !!addr.is_default || !!addr.isDefault || !!addr.default,
+            province: detail.province,
+            district: detail.district,
+            city: detail.city,
+            street1: detail.street1,
+            street2: detail.street2,
+            postal_code: detail.postal_code,
+            label: detail.label
+          };
+        });
+
+        setAddresses(formattedAddresses);
+      } catch (error) {
+        console.error('Failed to fetch addresses:', error);
+        setAddressError(error.message || 'Failed to load addresses');
+        setAddresses([]);
+      } finally {
+        setLoadingAddresses(false);
+      }
+    };
+
+    fetchAddresses();
+  }, []);
 
   // Scroll to section with navbar offset
   const scrollTo = (id) => {
@@ -381,10 +493,82 @@ export default function ProfilePage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleAddAddress = (form) => {
-    if (form.isDefault) setAddresses((p) => p.map((a) => ({ ...a, isDefault: false })));
-    setAddresses((p) => [...p, { id: Date.now(), isDefault: form.isDefault, name: form.fullName, address: `${form.street}, ${form.city}, ${form.state}, ${form.country} ${form.postal}`, phone: form.phone }]);
-    showToast("Address added");
+  const handleAddAddress = (newAddr) => {
+    setAddresses(prev => [...prev, newAddr]);
+    setShowAddAddr(false);
+    showToast("Address added successfully");
+  };
+
+  const handleMakeDefault = async (addr) => {
+    try {
+      const response = await setDefaultAddress(addr.id);
+
+      // Get the updated address from API response
+      let updatedAddr = null;
+      if (response.data) {
+        updatedAddr = response.data;
+      } else if (response.data && response.data.data) {
+        updatedAddr = response.data.data;
+      }
+
+      if (updatedAddr) {
+        // Immediately update local state with the response
+        setAddresses((prevAddresses) =>
+          prevAddresses.map((a) => ({
+            ...a,
+            isDefault: a.id === updatedAddr.id ? (!!updatedAddr.is_default) : false
+          }))
+        );
+      } else {
+        // Fallback: refetch if no response data
+        const response = await getUserAddresses();
+
+        let addressList = [];
+        if (response.data && Array.isArray(response.data.data)) {
+          addressList = response.data.data;
+        } else if (response.data && Array.isArray(response.data)) {
+          addressList = response.data;
+        } else if (Array.isArray(response)) {
+          addressList = response;
+        }
+
+        const formattedAddresses = addressList.map(a => {
+          const detail = a.address_detail || {};
+          return {
+            id: a.id,
+            name: detail.label || 'My Address',
+            address: `${detail.street1}${detail.street2 ? ', ' + detail.street2 : ''}, ${detail.city}, ${detail.district}, ${detail.province}`,
+            phone: a.phone || 'N/A',
+            isDefault: !!a.is_default || !!a.isDefault || !!a.default,
+            province: detail.province,
+            district: detail.district,
+            city: detail.city,
+            street1: detail.street1,
+            street2: detail.street2,
+            postal_code: detail.postal_code,
+            label: detail.label
+          };
+        });
+
+        setAddresses(formattedAddresses);
+      }
+
+      showToast("Default address updated");
+    } catch (error) {
+      console.error('Failed to update default address:', error);
+      showToast('Failed to update default address');
+    }
+  };
+
+  const handleRemoveAddress = async (addr) => {
+    try {
+      await deleteUserAddress(addr.id);
+      setAddresses((p) => p.filter((a) => a.id !== addr.id));
+      showToast("Address removed");
+    } catch (error) {
+      console.error('Failed to remove address:', error);
+      showToast('Failed to remove address');
+    }
   };
 
   const defaultAddr = addresses.find((a) => a.isDefault);
@@ -507,109 +691,102 @@ export default function ProfilePage() {
                   <Card>
                     <CardTitle title="Address Book" />
 
-                    {/* Default addresses */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
-                      {["DEFAULT SHIPPING ADDRESS", "DEFAULT BILLING ADDRESS"].map((label) => (
-                        <div key={label}>
-                          <p className="text-[10px] font-semibold text-gray-400 tracking-widest uppercase mb-2">
-                            {label}
-                          </p>
-                          {defaultAddr ? (
-                            <>
-                              <p className="text-[13px] font-medium text-[#1a1a1a]">{defaultAddr.name}</p>
-                              <p className="text-[12px] text-gray-500 font-light leading-relaxed">{defaultAddr.address}</p>
-                              <p className="text-[12px] text-gray-500 font-light">{defaultAddr.phone}</p>
-                            </>
-                          ) : (
-                            <p className="text-[12px] text-gray-400">No default set</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                    {/* Loading state */}
+                    {loadingAddresses && (
+                      <p className="text-[13px] text-gray-500 font-light py-8">Loading your addresses...</p>
+                    )}
 
-                    <BtnOutline label="Add New Address" onClick={() => setShowAddAddr(true)} />
+                    {/* Error state */}
+                    {addressError && (
+                      <div className="p-4 bg-red-50 border border-red-200 rounded-sm mb-4">
+                        <p className="text-[12px] text-red-600 font-light">{addressError}</p>
+                      </div>
+                    )}
+
+                    {/* Default addresses */}
+                    {!loadingAddresses && addresses.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
+                        {["DEFAULT SHIPPING ADDRESS", "DEFAULT BILLING ADDRESS"].map((label) => {
+                          const defaultAddr = addresses.find((a) => a.isDefault);
+                          return (
+                            <div key={label}>
+                              <p className="text-[10px] font-semibold text-gray-400 tracking-widest uppercase mb-2">
+                                {label}
+                              </p>
+                              {defaultAddr ? (
+                                <>
+                                  <p className="text-[13px] font-medium text-[#1a1a1a]">{defaultAddr.name}</p>
+                                  <p className="text-[12px] text-gray-500 font-light leading-relaxed">{defaultAddr.address}</p>
+                                  {defaultAddr.postal_code && (
+                                    <p className="text-[12px] text-gray-500 font-light">Postal Code: {defaultAddr.postal_code}</p>
+                                  )}
+                                </>
+                              ) : (
+                                <p className="text-[12px] text-gray-400">No default set</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Add address button */}
+                    {!loadingAddresses && !showAddAddr && (
+                      <BtnOutline label="+ Add New Address" onClick={() => setShowAddAddr(true)} />
+                    )}
+
+                    {/* Add address form */}
+                    {showAddAddr && (
+                      <AddAddressForm
+                        onSave={handleAddAddress}
+                        onCancel={() => setShowAddAddr(false)}
+                      />
+                    )}
 
                     {/* Address list */}
-                    <div className="mt-4 flex flex-col gap-0">
-                      {addresses.map((addr) => (
-                        <div key={addr.id}
-                          className="flex items-start justify-between gap-4 py-3
-                                     border-b border-gray-100 last:border-0">
-                          <p className="text-[12px] text-gray-700 font-light flex-1 min-w-0 leading-relaxed">
-                            {addr.name} ,{addr.address} {addr.phone}
-                          </p>
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <span className="text-gray-300 text-[11px]">|</span>
-                            {addr.isDefault
-                              ? <span className="text-[11px] text-gray-400 font-light">Default</span>
-                              : <BtnSmall label="Make Default" onClick={() => {
-                                  setAddresses((p) => p.map((a) => ({ ...a, isDefault: a.id === addr.id })));
-                                  showToast("Default address updated");
-                                }} />
-                            }
-                            <BtnSmallPink label="Remove" onClick={() => {
-                              setAddresses((p) => p.filter((a) => a.id !== addr.id));
-                              showToast("Address removed");
-                            }} />
+                    {!loadingAddresses && addresses.length > 0 && (
+                      <div className="mt-4 flex flex-col gap-0">
+                        {addresses.map((addr) => (
+                          <div key={addr.id}
+                            className="flex items-start justify-between gap-4 py-3
+                                       border-b border-gray-100 last:border-0">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[13px] font-medium text-[#1a1a1a]">{addr.name}</p>
+                              <p className="text-[12px] text-gray-500 font-light leading-relaxed mt-0.5">{addr.address}</p>
+                              {addr.postal_code && (
+                                <p className="text-[12px] text-gray-500 font-light">Postal Code: {addr.postal_code}</p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <span className="text-gray-300 text-[11px]">|</span>
+                              {addr.isDefault
+                                ? <span className="text-[11px] text-gray-400 font-light">Default</span>
+                                : <BtnSmall label="Make Default" onClick={() => handleMakeDefault(addr)} />
+                              }
+                              <BtnSmallPink label="Remove" onClick={() => handleRemoveAddress(addr)} />
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Empty state */}
+                    {!loadingAddresses && addresses.length === 0 && !addressError && (
+                      <p className="text-[13px] text-gray-500 font-light py-4">No addresses saved yet. Add one below.</p>
+                    )}
                   </Card>
                 </div>
 
-                {/* My Payment Options — own bordered card */}
+                {/* My Payment Options — DISABLED (only COD available for now) */}
+                {/* Commented out until payment gateway is integrated */}
+                {/*
                 <div ref={refs["payment-options"]}>
                   <Card>
                     <CardTitle title="My Payment Options" />
-
-                    <p className="text-[10px] font-semibold text-gray-400 tracking-widest uppercase mb-2">
-                      DEFAULT CARD
-                    </p>
-                    {cards.filter((c) => c.isDefault).map((card) => (
-                      <div key={card.id} className="mb-4">
-                        <p className="text-[13px] font-medium text-[#1a1a1a]">{card.name}</p>
-                        <p className="text-[12px] text-gray-500 font-light">34/B, Wanatha road, Maharagama.</p>
-                        <p className="text-[12px] text-gray-500 font-light">Western - Colombo - Greater - Maharagama</p>
-                        <p className="text-[12px] text-gray-500 font-light">(+94) 713531297</p>
-                      </div>
-                    ))}
-
-                    <BtnOutline label="Add New Card" onClick={() => showToast("Payment gateway coming soon")} />
-
-                    <div className="mt-4 flex flex-col gap-0">
-                      {cards.map((card) => (
-                        <div key={card.id}
-                          className="flex items-center justify-between gap-4 py-3
-                                     border-b border-gray-100 last:border-0">
-                          <div className="flex items-center gap-3">
-                            <span className="inline-block border border-blue-700 text-blue-700
-                                             text-[11px] font-bold px-2 py-0.5 tracking-wide">
-                              {card.brand}
-                            </span>
-                            <span className="text-[12px] text-gray-700 font-light">
-                              {card.name} &nbsp;|&nbsp; {card.number} &nbsp;|&nbsp; Expire {card.expiry}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <span className="text-gray-300 text-[11px]">|</span>
-                            {card.isDefault
-                              ? <span className="text-[11px] text-gray-400 font-light">Default</span>
-                              : <BtnSmall label="Make Default" onClick={() => {
-                                  setCards((p) => p.map((c) => ({ ...c, isDefault: c.id === card.id })));
-                                  showToast("Default card updated");
-                                }} />
-                            }
-                            <BtnSmallPink label="Remove" onClick={() => {
-                              setCards((p) => p.filter((c) => c.id !== card.id));
-                              showToast("Card removed");
-                            }} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    ... payment options content ...
                   </Card>
                 </div>
+                */}
               </div>
             </div>
 
@@ -680,7 +857,6 @@ export default function ProfilePage() {
       </div>
 
       {/* Modals */}
-      {showAddAddr  && <AddAddressModal  onClose={() => setShowAddAddr(false)}  onAdd={handleAddAddress} />}
       {showEditProf && <EditProfileModal onClose={() => setShowEditProf(false)} onSave={(f) => { setUser(f); showToast("Profile updated"); }} user={user} />}
 
       {toast && <Toast message={toast} />}
