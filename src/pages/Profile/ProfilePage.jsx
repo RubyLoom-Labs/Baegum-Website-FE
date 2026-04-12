@@ -639,10 +639,10 @@ export default function ProfilePage() {
           // Input formats: "2026-04-12 08:38:36" or "2026-04-12T13:57:06.000000Z"
           const formatDateTime = (dateString) => {
             if (!dateString) return '';
-            
+
             const date = new Date(dateString);
             if (isNaN(date.getTime())) return dateString;
-            
+
             // Format as "Apr 12, 2026 at 1:57 PM"
             const options = {
               month: 'short',
@@ -652,7 +652,7 @@ export default function ProfilePage() {
               minute: '2-digit',
               hour12: true
             };
-            
+
             return date.toLocaleDateString('en-US', options).replace(',', ', at');
           };
 

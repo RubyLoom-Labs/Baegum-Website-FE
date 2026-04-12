@@ -102,6 +102,7 @@ export const transformProductData = (apiProduct) => {
     sizes: sizes,
     variants: variants,
     productVariants: product.product_variants || [],
+    reviews: product.reviews || [],
     // Add default details if not provided
     description: product.description || 'Product details coming soon',
     details: product.description || 'Product details coming soon',

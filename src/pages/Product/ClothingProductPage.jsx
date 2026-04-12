@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import ClothingGallery from "./components/ClothingGallery";
 import AccordionSection from "./components/AccordionSection";
-import ReviewSection from "./components/ReviewSection";
+import ReviewSection, { ReviewModal } from "./components/ReviewSection";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
 import { getItems } from "@/services/filterItems";
 import { addToCart as addToCartAPI } from "@/services/cart";
+import { submitProductReview } from "@/services/product";
 import "./ClothingProductPage.css";
 
 import wishlistIcon from "@/assets/icons/wishlist.svg";
@@ -35,6 +36,10 @@ export default function ClothingProductPage({ product, categoryId }) {
   const [combinationError, setCombinationError] = useState(null);
   const [addingToCart,    setAddingToCart]    = useState(false);
   const [cartError,       setCartError]       = useState(null);
+  const [reviews,         setReviews]         = useState([]);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [toast,           setToast]           = useState(null);
 
   // Fetch all available sizes for this category
   useEffect(() => {
@@ -56,6 +61,37 @@ export default function ClothingProductPage({ product, categoryId }) {
 
     fetchCategorySizes();
   }, [categoryId]);
+
+  // Fetch reviews from product data
+  useEffect(() => {
+    if (product?.reviews && Array.isArray(product.reviews)) {
+      setReviews(product.reviews);
+      console.log('Reviews loaded:', product.reviews);
+    }
+  }, [product?.id, product?.reviews]);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const handleSubmitReview = async (reviewData) => {
+    try {
+      setSubmittingReview(true);
+      await submitProductReview({
+        product_id: product.id,
+        ...reviewData
+      });
+      showToast('Thank you! Your review has been submitted successfully.');
+      setShowReviewModal(false);
+      // Optionally refetch reviews here if needed
+    } catch (error) {
+      console.error('Failed to submit review:', error);
+      showToast('Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   // Check if a size is available with the selected color (and has stock)
   const isSizeAvailableWithColor = (sizeId, colorId) => {
@@ -487,7 +523,32 @@ export default function ClothingProductPage({ product, categoryId }) {
         </div>
 
         {/* ── Reviews ────────────────────────────────────────────── */}
-        <ReviewSection isLoggedIn={isLoggedIn} openLogin={openLogin} />
+        <ReviewSection
+          productId={product.id}
+          reviews={reviews}
+          isLoggedIn={isLoggedIn}
+          openLogin={openLogin}
+          onWriteReview={() => setShowReviewModal(true)}
+        />
+
+        {/* Review Modal */}
+        {showReviewModal && (
+          <ReviewModal
+            productId={product.id}
+            onClose={() => setShowReviewModal(false)}
+            onSubmit={handleSubmitReview}
+            isSubmitting={submittingReview}
+          />
+        )}
+
+        {/* Toast notification */}
+        {toast && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] px-6 py-3
+                          bg-green-600 text-white text-[13px] font-light rounded-sm shadow-xl
+                          transition-all duration-300 whitespace-nowrap">
+            {toast}
+          </div>
+        )}
       </div>
     </div>
   );
