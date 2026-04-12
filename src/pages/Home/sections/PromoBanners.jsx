@@ -169,19 +169,71 @@ function MobileCarousel({ promos }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function PromoBanners() {
+  const [promos, setPromos] = useState(FALLBACK_PROMOS);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch promo banners from backend on mount
+  useEffect(() => {
+    const fetchPromos = async () => {
+      try {
+        setLoading(true);
+        const response = await getPromos();
+
+        // Handle different response formats
+        let promosData = FALLBACK_PROMOS;
+        if (response.data && Array.isArray(response.data.data)) {
+          promosData = response.data.data;
+        } else if (response.data && Array.isArray(response.data)) {
+          promosData = response.data;
+        } else if (Array.isArray(response)) {
+          promosData = response;
+        }
+
+        // Format promo data from API response
+        const formattedPromos = Array.isArray(promosData)
+          ? promosData.map((promo) => ({
+              id: promo.id,
+              image: promo.image || promo.banner_image || '',
+              alt: promo.alt || promo.title || 'Promo Banner',
+              btnLabel: promo.button_label || promo.btn_label || 'Shop Now',
+              btnBg: promo.button_bg || promo.btn_bg || '#1a1a1a',
+              btnText: promo.button_text || promo.btn_text || '#ffffff',
+              btnHoverBg: promo.button_hover_bg || promo.btn_hover_bg || '#333333',
+              href: promo.link || promo.url || promo.href || '#',
+            }))
+          : FALLBACK_PROMOS;
+
+        setPromos(formattedPromos);
+      } catch (error) {
+        console.error('Failed to fetch promo banners:', error);
+        // Use fallback data on error
+        setPromos(FALLBACK_PROMOS);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPromos();
+  }, []);
+
+  // Don't render anything while loading
+  if (loading && promos === FALLBACK_PROMOS) {
+    return null;
+  }
+
   return (
     <section className="w-full py-10 pt-0 bg-white">
 
       {/* ── Desktop: 3 cols ─────────────────────────────────────── */}
       <div className="hidden md:grid md:grid-cols-3 gap-4 max-w-screen-xl mx-auto px-6">
-        {PROMOS.map((promo) => (
+        {promos.map((promo) => (
           <PromoCard key={promo.id} promo={promo} />
         ))}
       </div>
 
       {/* ── Mobile: full-width carousel ─────────────────────────── */}
       <div className="md:hidden">
-        <MobileCarousel />
+        <MobileCarousel promos={promos} />
       </div>
 
     </section>

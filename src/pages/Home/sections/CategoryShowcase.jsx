@@ -13,9 +13,9 @@ import imgSkinCare   from "@/assets/categories/skin-care.jpg";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  { id: 1, image: imgFragrances, label: "Fragrances", href: "#" },
-  { id: 2, image: imgBathBody,   label: "Bath & Body", href: "#" },
-  { id: 3, image: imgSkinCare,   label: "Skin Care",   href: "#" },
+  { id: 1, image: imgFragrances, label: "Fragrances", href: "/fragrance" },
+  { id: 2, image: imgBathBody,   label: "Bath & Body", href: "/bath-body" },
+  { id: 3, image: imgSkinCare,   label: "Skin Care",   href: "/skincare" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
