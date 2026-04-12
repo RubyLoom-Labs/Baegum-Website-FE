@@ -9,6 +9,22 @@ import promoBg1 from "@/assets/banners/promo/cream-set.png";
 import promoBg2 from "@/assets/banners/promo/shampoo-set.png";
 import promoBg3 from "@/assets/banners/promo/perfume-set.png";
 
+// Helper function to construct full image URL
+const getFullImageUrl = (imagePath) => {
+  if (!imagePath) return '';
+  
+  // If already a full URL, return as is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  // Construct full URL from relative path
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  // Remove leading slash if present
+  const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+  return `${apiUrl}/${cleanPath}`;
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // FALLBACK DATA
 // ─────────────────────────────────────────────────────────────────────────────
@@ -193,7 +209,7 @@ export default function PromoBanners() {
         const formattedPromos = Array.isArray(promosData)
           ? promosData.map((promo) => ({
               id: promo.id,
-              image: promo.image || promo.banner_image || '',
+              image: getFullImageUrl(promo.image || promo.banner_image || ''),
               alt: promo.alt || promo.title || 'Promo Banner',
               btnLabel: promo.button_label || promo.btn_label || 'Shop Now',
               btnBg: promo.button_bg || promo.btn_bg || '#1a1a1a',
