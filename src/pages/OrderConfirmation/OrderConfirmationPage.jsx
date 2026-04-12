@@ -227,12 +227,14 @@ export default function OrderConfirmationPage() {
 
               {/* Action buttons */}
               <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => navigate('/profile')}
-                  className="w-full py-3.5 bg-[#1a1a1a] hover:bg-gray-800 active:bg-gray-700
-                             text-white text-[13px] font-medium tracking-wide transition-colors">
-                  Track My Order
-                </button>
+                {orderStatusId !== 4 && (
+                  <button
+                    onClick={() => navigate('/profile')}
+                    className="w-full py-3.5 bg-[#1a1a1a] hover:bg-gray-800 active:bg-gray-700
+                               text-white text-[13px] font-medium tracking-wide transition-colors">
+                    Track My Order
+                  </button>
+                )}
                 <button
                   onClick={() => navigate('/')}
                   className="w-full py-3.5 border border-gray-300 hover:border-[#1a1a1a]

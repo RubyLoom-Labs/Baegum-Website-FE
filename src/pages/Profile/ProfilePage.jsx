@@ -395,8 +395,8 @@ function OrderRow({ item, type, onViewOrder }) {
         <p className="text-[11px] text-gray-500 font-light mt-0.5 leading-relaxed">
           {item.price}
           {item.orderDate && <> &nbsp;|&nbsp; {item.orderDate}</>}
-          {type === "current" && item.status && <> &nbsp;|&nbsp; Status: <span className="text-[#1a1a1a]">{item.status}</span></>}
-          {type === "current" && item.itemCount && <> &nbsp;|&nbsp; Items: <span className="text-[#1a1a1a]">{item.itemCount}</span></>}
+          {(type === "current" || type === "completed") && item.status && <> &nbsp;|&nbsp; Status: <span className="text-[#1a1a1a]">{item.status}</span></>}
+          {(type === "current" || type === "completed") && item.itemCount && <> &nbsp;|&nbsp; Items: <span className="text-[#1a1a1a]">{item.itemCount}</span></>}
           {item.arrivedDate && <> &nbsp;|&nbsp; Arrived: {item.arrivedDate}</>}
           {item.reason && <> &nbsp;|&nbsp; {item.reason}</>}
         </p>
@@ -407,6 +407,12 @@ function OrderRow({ item, type, onViewOrder }) {
             <BtnSmall label="View Order" onClick={() => onViewOrder && onViewOrder(item)} />
             <BtnSmall label="Track Order" onClick={() => {}} />
             <BtnSmallPink label="# Cancel" onClick={() => {}} />
+          </>
+        )}
+        {type === "completed" && (
+          <>
+            <BtnSmall label="View Order" onClick={() => onViewOrder && onViewOrder(item)} />
+            <BtnSmall label="Review" onClick={() => {}} />
           </>
         )}
         {type === "reviews" && (
@@ -429,7 +435,7 @@ function OrderRow({ item, type, onViewOrder }) {
 // All scrollable section IDs in order
 const ALL_SECTIONS = [
   "my-profile", "address-book", "payment-options",
-  "current-orders", "my-returns", "my-cancellations", "my-reviews",
+  "current-orders", "completed-orders", "my-returns", "my-cancellations", "my-reviews",
   "my-wishlist",
 ];
 
@@ -472,6 +478,9 @@ export default function ProfilePage() {
   const [addressError,      setAddressError]      = useState(null);
   const [loadingProfile,    setLoadingProfile]    = useState(true);
   const [currentOrders,     setCurrentOrders]     = useState([]);
+  const [completedOrders,   setCompletedOrders]   = useState([]);
+  const [cancelledOrders,   setCancelledOrders]   = useState([]);
+  const [returnedOrders,    setReturnedOrders]    = useState([]);
   const [rawOrders,         setRawOrders]         = useState({});
   const [loadingOrders,     setLoadingOrders]     = useState(true);
 
@@ -587,8 +596,13 @@ export default function ProfilePage() {
           ordersList = response;
         }
 
-        // Format orders from API response
-        const formattedOrders = ordersList.map(order => {
+        // Format orders from API response - separate by status
+        const formattedCurrentOrders = [];
+        const formattedCompletedOrders = [];
+        const formattedCancellations = [];
+        const formattedReturns = [];
+        
+        ordersList.forEach(order => {
           // Format date from date_time (format: "2026-04-12 08:38:36")
           const orderDate = order.date_time
             ? order.date_time.split(' ')[0]
@@ -603,8 +617,9 @@ export default function ProfilePage() {
           
           // Get order status
           const statusName = order.order_status?.name || 'Pending';
+          const statusId = order.order_status_id || 1;
 
-          return {
+          const formattedOrder = {
             id: order.id,
             orderId: `#${order.id}`,
             name: `Order #${order.id}`,
@@ -614,11 +629,30 @@ export default function ProfilePage() {
             status: statusName,
             itemCount: itemCount,
             shippingDate: null,
-            image: null
+            image: null,
+            statusId: statusId
           };
+
+          // Separate by status
+          if (statusId === 1 || statusId === 2 || statusId === 3) {
+            // Status 1-3: Current orders (Confirmed, Processing, Shipped)
+            formattedCurrentOrders.push(formattedOrder);
+          } else if (statusId === 4) {
+            // Status 4: Completed/Delivered orders
+            formattedCompletedOrders.push(formattedOrder);
+          } else if (statusId === 5) {
+            // Status 5: Cancelled orders
+            formattedCancellations.push(formattedOrder);
+          } else if (statusId === 6) {
+            // Status 6: Returned orders
+            formattedReturns.push(formattedOrder);
+          }
         });
 
-        setCurrentOrders(formattedOrders);
+        setCurrentOrders(formattedCurrentOrders);
+        setCompletedOrders(formattedCompletedOrders);
+        setCancelledOrders(formattedCancellations);
+        setReturnedOrders(formattedReturns);
 
         // Store raw order data mapped by ID for later use
         const rawOrdersMap = {};
@@ -906,8 +940,9 @@ export default function ProfilePage() {
                 <NavGroup label="My Orders" target="orders" />
                 <div className="flex flex-col gap-0.5 pl-1">
                   <NavLink label="Current Orders"   target="current-orders"   badge={currentOrders.length} />
-                  <NavLink label="My Returns"       target="my-returns"       />
-                  <NavLink label="My Cancellations" target="my-cancellations" />
+                  <NavLink label="Completed Orders" target="completed-orders" badge={completedOrders.length} />
+                  <NavLink label="My Returns"       target="my-returns"       badge={returnedOrders.length} />
+                  <NavLink label="My Cancellations" target="my-cancellations" badge={cancelledOrders.length} />
                   <NavLink label="My Reviews"       target="my-reviews"       badge={REVIEWS_PENDING.length} />
                 </div>
               </div>
@@ -1111,6 +1146,20 @@ export default function ProfilePage() {
                   </Card>
                 </div>
 
+                {/* Completed Orders */}
+                <div ref={refs["completed-orders"]}>
+                  <Card>
+                    <CardTitle title="Completed Orders" />
+                    {loadingOrders ? (
+                      <p className="text-[13px] text-gray-500 font-light py-8">Loading your orders...</p>
+                    ) : completedOrders.length === 0 ? (
+                      <p className="text-[13px] text-gray-500 font-light py-4">No completed orders</p>
+                    ) : (
+                      completedOrders.map((o) => <OrderRow key={o.id} item={o} type="completed" onViewOrder={handleViewOrder} />)
+                    )}
+                  </Card>
+                </div>
+
                 {/* My Reviews */}
                 <div ref={refs["my-reviews"]}>
                   <Card>
@@ -1126,7 +1175,11 @@ export default function ProfilePage() {
                 <div ref={refs["my-cancellations"]}>
                   <Card>
                     <CardTitle title="My Cancellations" />
-                    {CANCELLATIONS.map((o) => <OrderRow key={o.id} item={o} type="cancellations" />)}
+                    {cancelledOrders.length === 0 ? (
+                      <p className="text-[13px] text-gray-400 font-light">No cancelled orders</p>
+                    ) : (
+                      cancelledOrders.map((o) => <OrderRow key={o.id} item={o} type="cancellations" onViewOrder={handleViewOrder} />)
+                    )}
                   </Card>
                 </div>
 
@@ -1134,7 +1187,11 @@ export default function ProfilePage() {
                 <div ref={refs["my-returns"]}>
                   <Card>
                     <CardTitle title="Returns" />
-                    {RETURNS.map((o) => <OrderRow key={o.id} item={o} type="returns" />)}
+                    {returnedOrders.length === 0 ? (
+                      <p className="text-[13px] text-gray-400 font-light">No returned orders</p>
+                    ) : (
+                      returnedOrders.map((o) => <OrderRow key={o.id} item={o} type="returns" onViewOrder={handleViewOrder} />)
+                    )}
                   </Card>
                 </div>
               </div>
