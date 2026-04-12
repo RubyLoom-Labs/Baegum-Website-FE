@@ -69,7 +69,7 @@ function ReviewModal({ item, orderId, onClose, onSubmit, onError }) {
       alert('Please select a rating');
       return;
     }
-    
+
     setIsSubmitting(true);
 
     try {
@@ -83,10 +83,10 @@ function ReviewModal({ item, orderId, onClose, onSubmit, onError }) {
       };
 
       await submitProductReview(reviewData);
-      
+
       // Call the success callback
       onSubmit({ rating, reviewText, photos });
-      
+
       setTimeout(() => {
         onClose();
         setIsSubmitting(false);
@@ -171,7 +171,7 @@ function ReviewModal({ item, orderId, onClose, onSubmit, onError }) {
               </div>
               <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} className="hidden" />
             </label>
-            
+
             {/* Photo Preview */}
             {photos.length > 0 && (
               <div className="grid grid-cols-3 gap-2 mt-3">
@@ -258,10 +258,10 @@ export default function OrderConfirmationPage() {
   const [reviews, setReviews] = useState({}); // Map of product_id -> review
   const [loadingReviews, setLoadingReviews] = useState(true);
 
-  const showToast = (msg, type = 'success') => { 
-    setToast(msg); 
+  const showToast = (msg, type = 'success') => {
+    setToast(msg);
     setToastType(type);
-    setTimeout(() => setToast(null), 3000); 
+    setTimeout(() => setToast(null), 3000);
   };
 
   // Fetch existing reviews for this order
@@ -270,7 +270,7 @@ export default function OrderConfirmationPage() {
       try {
         setLoadingReviews(true);
         const response = await getOrderReviews(orderId);
-        
+
         // Handle nested response structure
         let reviewsData = response;
         if (response.data) {
@@ -311,12 +311,12 @@ export default function OrderConfirmationPage() {
   const handleSubmitReview = async (reviewData) => {
     // Success callback from ReviewModal
     showToast('Thank you! Your review has been submitted successfully.', 'success');
-    
+
     // Refetch reviews to display the newly submitted review with full details from API
     try {
       setLoadingReviews(true);
       const response = await getOrderReviews(orderId);
-      
+
       // Handle nested response structure
       let reviewsData = response;
       if (response.data) {
@@ -353,7 +353,7 @@ export default function OrderConfirmationPage() {
     } finally {
       setLoadingReviews(false);
     }
-    
+
     handleCloseReview();
   };
 
@@ -425,7 +425,7 @@ export default function OrderConfirmationPage() {
                       <p className="text-[12px] text-gray-500 font-light mt-0.5">
                         Qty: {item.qty} &nbsp;×&nbsp; Rs.{item.price.toFixed(2)}
                       </p>
-                      
+
                       {/* Check if review exists for this product */}
                       {reviews[item.product_id || item.id] ? (
                         // Show existing review
@@ -451,19 +451,19 @@ export default function OrderConfirmationPage() {
                               ))}
                             </div>
                           </div>
-                          
+
                           {/* Review comment */}
                           <p className="text-[11px] text-gray-700 font-light leading-relaxed">{reviews[item.product_id || item.id].comment}</p>
-                          
+
                           {/* Review photos */}
                           {reviews[item.product_id || item.id].photos && reviews[item.product_id || item.id].photos.length > 0 && (
                             <div className="flex gap-2 mt-2 flex-wrap">
                               {reviews[item.product_id || item.id].photos.map((photo, idx) => (
                                 <div key={idx} className="w-12 h-12 bg-gray-100 rounded-sm overflow-hidden border border-gray-200">
-                                  <img 
-                                    src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/storage/${photo}`} 
-                                    alt={`Review photo ${idx}`} 
-                                    className="w-full h-full object-cover" 
+                                  <img
+                                    src={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/storage/${photo}`}
+                                    alt={`Review photo ${idx}`}
+                                    className="w-full h-full object-cover"
                                     onError={(e) => { e.target.src = ''; e.target.style.display = 'none'; }}
                                   />
                                 </div>
@@ -558,19 +558,19 @@ export default function OrderConfirmationPage() {
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${orderStatusId >= 1 ? 'bg-green-400' : 'bg-gray-200'}`} />
                     <p className={`text-[12px] font-light ${orderStatusId >= 1 ? 'text-[#1a1a1a]' : 'text-gray-400'}`}>Order Confirmed</p>
                   </div>
-                  
+
                   {/* Status 2: Processing */}
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${orderStatusId >= 2 ? 'bg-green-400' : 'bg-gray-200'}`} />
                     <p className={`text-[12px] font-light ${orderStatusId >= 2 ? 'text-[#1a1a1a]' : 'text-gray-400'}`}>Processing (1–2 days)</p>
                   </div>
-                  
+
                   {/* Status 3: Shipped */}
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${orderStatusId >= 3 ? 'bg-green-400' : 'bg-gray-200'}`} />
                     <p className={`text-[12px] font-light ${orderStatusId >= 3 ? 'text-[#1a1a1a]' : 'text-gray-400'}`}>Shipped (2–4 days)</p>
                   </div>
-                  
+
                   {/* Status 4: Delivered */}
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${orderStatusId >= 4 ? 'bg-green-400' : 'bg-gray-200'}`} />

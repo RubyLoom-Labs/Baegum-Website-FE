@@ -82,3 +82,13 @@ export function getUserProfile() {
 export function getCurrentOrders() {
   return get('/api/users/orders/current');
 }
+
+/**
+ * Cancel an order
+ * PUT /api/orders/:id/cancel
+ * @param {number|string} orderId - Order ID to cancel
+ * @returns {Promise} Updated order object
+ */
+export function cancelOrder(orderId) {
+  return put(`/api/orders/${orderId}/cancel`, {});
+}

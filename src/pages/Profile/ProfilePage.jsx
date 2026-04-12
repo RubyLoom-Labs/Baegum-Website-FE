@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import ProductCard from "@/components/ui/ProductCard";
-import { getUserAddresses, createUserAddress, setDefaultAddress, deleteUserAddress, updateUserProfile, getUserProfile, getCurrentOrders } from "@/services/user";
+import { getUserAddresses, createUserAddress, setDefaultAddress, deleteUserAddress, updateUserProfile, getUserProfile, getCurrentOrders, cancelOrder } from "@/services/user";
 import { getProductDetail, getProductVariantDetail } from "@/services/product";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -381,10 +381,39 @@ function EditProfileModal({ user, onClose, onSave, showToast }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CONFIRM CANCEL MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ConfirmCancelModal({ orderId, onClose, onConfirm, isLoading }) {
+  return (
+    <>
+      <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-[61] flex items-center justify-center px-4">
+        <div className="bg-white w-full max-w-[420px] rounded-sm shadow-xl p-7" onClick={(e) => e.stopPropagation()}>
+          <h3 className="text-[18px] font-light text-[#1a1a1a] mb-3">Cancel Order</h3>
+          <p className="text-[13px] text-gray-600 font-light mb-6 leading-relaxed">
+            Are you sure you want to cancel this order? This action cannot be undone.
+          </p>
+          <div className="flex gap-3">
+            <BtnOutline label="Keep Order" onClick={onClose} />
+            <button onClick={onConfirm} disabled={isLoading}
+              className="flex-1 bg-red-600 hover:bg-red-700 active:bg-red-800
+                         text-white text-[13px] font-medium py-3 tracking-wide
+                         transition-colors disabled:opacity-50 rounded-sm">
+              {isLoading ? 'Cancelling...' : 'Cancel Order'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ORDER ROW
 // ─────────────────────────────────────────────────────────────────────────────
 
-function OrderRow({ item, type, onViewOrder }) {
+function OrderRow({ item, type, onViewOrder, onCancelOrder }) {
   return (
     <div className="flex items-center gap-4 py-3.5 border-b border-gray-100 last:border-0">
       <div className="w-12 h-12 flex-shrink-0 bg-gray-200 overflow-hidden rounded-sm flex items-center justify-center text-[13px] font-medium text-gray-600">
@@ -406,13 +435,13 @@ function OrderRow({ item, type, onViewOrder }) {
           <>
             <BtnSmall label="View Order" onClick={() => onViewOrder && onViewOrder(item)} />
             <BtnSmall label="Track Order" onClick={() => {}} />
-            <BtnSmallPink label="# Cancel" onClick={() => {}} />
+            {item.statusId === 1 && <BtnSmallPink label="Cancel" onClick={() => onCancelOrder && onCancelOrder(item)} />}
           </>
         )}
         {type === "completed" && (
           <>
             <BtnSmall label="View Order" onClick={() => onViewOrder && onViewOrder(item)} />
-            <BtnSmall label="Review" onClick={() => {}} />
+
           </>
         )}
         {type === "reviews" && (
@@ -483,6 +512,9 @@ export default function ProfilePage() {
   const [returnedOrders,    setReturnedOrders]    = useState([]);
   const [rawOrders,         setRawOrders]         = useState({});
   const [loadingOrders,     setLoadingOrders]     = useState(true);
+  const [showCancelModal,   setShowCancelModal]   = useState(false);
+  const [selectedOrderForCancel, setSelectedOrderForCancel] = useState(null);
+  const [cancellingOrderId,  setCancellingOrderId] = useState(null);
 
   const refs = Object.fromEntries(ALL_SECTIONS.map((id) => [id, useRef(null)]));
 
@@ -601,7 +633,7 @@ export default function ProfilePage() {
         const formattedCompletedOrders = [];
         const formattedCancellations = [];
         const formattedReturns = [];
-        
+
         ordersList.forEach(order => {
           // Format date from date_time (format: "2026-04-12 08:38:36")
           const orderDate = order.date_time
@@ -614,7 +646,7 @@ export default function ProfilePage() {
 
           // Get item count
           const itemCount = order.order_items ? order.order_items.length : 0;
-          
+
           // Get order status
           const statusName = order.order_status?.name || 'Pending';
           const statusId = order.order_status_id || 1;
@@ -889,6 +921,35 @@ export default function ProfilePage() {
     }
   };
 
+  const handleCancelOrder = (order) => {
+    setSelectedOrderForCancel(order);
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!selectedOrderForCancel) return;
+
+    try {
+      setCancellingOrderId(selectedOrderForCancel.id);
+      await cancelOrder(selectedOrderForCancel.id);
+      showToast('Order cancelled successfully');
+
+      // Remove cancelled order from current orders
+      setCurrentOrders(prev => prev.filter(o => o.id !== selectedOrderForCancel.id));
+
+      // Add to cancelled orders
+      setCancelledOrders(prev => [...prev, selectedOrderForCancel]);
+
+      setShowCancelModal(false);
+      setSelectedOrderForCancel(null);
+    } catch (error) {
+      console.error('Failed to cancel order:', error);
+      showToast('Failed to cancel order');
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
+
   const defaultAddr = addresses.find((a) => a.isDefault);
 
   // Nav item component
@@ -1142,7 +1203,7 @@ export default function ProfilePage() {
                     ) : currentOrders.length === 0 ? (
                       <p className="text-[13px] text-gray-500 font-light py-4">No current orders</p>
                     ) : (
-                      currentOrders.map((o) => <OrderRow key={o.id} item={o} type="current" onViewOrder={handleViewOrder} />)
+                      currentOrders.map((o) => <OrderRow key={o.id} item={o} type="current" onViewOrder={handleViewOrder} onCancelOrder={handleCancelOrder} />)
                     )}
                   </Card>
                 </div>
@@ -1213,6 +1274,7 @@ export default function ProfilePage() {
 
       {/* Modals */}
       {showEditProf && <EditProfileModal onClose={() => setShowEditProf(false)} onSave={(f) => { setUser(f); }} user={user} showToast={showToast} />}
+      {showCancelModal && <ConfirmCancelModal orderId={selectedOrderForCancel?.id} onClose={() => { setShowCancelModal(false); setSelectedOrderForCancel(null); }} onConfirm={handleConfirmCancel} isLoading={cancellingOrderId !== null} />}
 
       {toast && <Toast message={toast} />}
     </div>

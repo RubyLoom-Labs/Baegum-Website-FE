@@ -35,14 +35,14 @@ export const submitProductReview = async (reviewData) => {
   formData.append('order_id', reviewData.order_id);
   formData.append('rating', reviewData.rating);
   formData.append('review', reviewData.review);
-  
+
   // Add photos if any
   if (reviewData.photos && reviewData.photos.length > 0) {
     reviewData.photos.forEach((photo, index) => {
       formData.append(`photos[${index}]`, photo);
     });
   }
-  
+
   // Log the payload being sent (for debugging)
   console.log('📤 Submitting review to /api/reviews with FormData:', {
     product_id: reviewData.product_id,
@@ -51,7 +51,7 @@ export const submitProductReview = async (reviewData) => {
     review: reviewData.review,
     photo_count: reviewData.photos?.length || 0
   });
-  
+
   // Use postFormData for multipart/form-data uploads
   const response = await api.postFormData('/api/reviews', formData);
   return response;
