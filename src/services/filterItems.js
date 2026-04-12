@@ -14,7 +14,7 @@ export const getItems = async (endpoint) => {
  */
 export const getItemsWithAuth = async (endpoint) => {
   const token = getCookie('authToken');
-  
+
   // If no token, fall back to regular getItems which will attempt without auth
   if (!token) {
     return getItems(endpoint);

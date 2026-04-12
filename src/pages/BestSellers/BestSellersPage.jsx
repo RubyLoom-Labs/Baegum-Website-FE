@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import ProductCard from '@/components/ui/ProductCard'
 import FilterSidebar from './components/FilterSidebar'
 import Pagination from '@/components/ui/Pagination'
-import { getProducts } from '@/services/product'
+import { getBestSellers } from '@/services/product'
 //import placeholder from '@/assets/products/best-sellers/p1.png'
 
 const ITEMS_PER_PAGE = 12
@@ -11,10 +11,10 @@ const formatProduct = (apiProduct) => {
     const variant = apiProduct.product_variants?.[0]
     return {
         id: apiProduct.id,
-        image: apiProduct.image || placeholder,
+        image: apiProduct.image || apiProduct.product?.images?.[0] || null,
         name: apiProduct.name,
-        description: apiProduct.description || `${apiProduct.brand?.name || ''} - ${apiProduct.product_category?.name || ''}`,
-        price: variant ? `Rs.${parseFloat(variant.unit_price).toFixed(2)}` : 'Rs.0.00',
+        description: apiProduct.sub_topic || apiProduct.description || `${apiProduct.brand?.name || ''} - ${apiProduct.product_category?.name || ''}`,
+        price:  `Rs.${parseFloat(apiProduct.price).toFixed(2)}` ?? (apiProduct.price ? `Rs.${parseFloat(apiProduct.price).toFixed(2)}` : 'Rs.0.00'),
         href: `/products/best-sellers/${apiProduct.id}`,
     }
 }
@@ -41,19 +41,32 @@ export default function BestSellersPage() {
         const fetchProducts = async () => {
             try {
                 setLoading(true)
-                const response = await getProducts(7)
-                const formatted = response.data.data.map(formatProduct)
+                // Build filter object from selectedFilters
+                const filterParams = selectedFilters.reduce((acc, filter) => {
+                    const [key, value] = filter.split(':')
+                    acc[key] = [...(acc[key] || []), value]
+                    return acc
+                }, {})
+
+                // Fetch best sellers with filters from /api/best-sellers endpoint
+                const response = await getBestSellers(currentPage, filterParams)
+
+                // Handle the response structure: {current_page, data, pagination, per_page, total_count, total_pages}
+                const productsData = response.data || response.products || []
+                const formatted = productsData.map(formatProduct)
+
                 setProducts(formatted)
-                setTotalProducts(response.data.total || formatted.length)
-                setTotalPages(response.data.total_pages || Math.ceil(response.data.total / ITEMS_PER_PAGE) || 1)
+                setTotalProducts(response.total_count || productsData.length)
+                setTotalPages(response.total_pages || 1)
             } catch (error) {
                 console.error('Error fetching Best Sellers products:', error)
+                setProducts([])
             } finally {
                 setLoading(false)
             }
         }
         fetchProducts()
-    }, [currentPage])
+    }, [currentPage, selectedFilters])
 
 
     const handlePageChange = (page) => {
@@ -61,11 +74,16 @@ export default function BestSellersPage() {
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
-    const toggleFilter = (key) =>
+    const toggleFilter = (key) => {
         setSelectedFilters((prev) =>
             prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
         )
-    const clearFilters = () => setSelectedFilters([])
+        setCurrentPage(1)
+    }
+    const clearFilters = () => {
+        setSelectedFilters([])
+        setCurrentPage(1)
+    }
     const activeCount = selectedFilters.length
 
     return (
@@ -119,7 +137,7 @@ export default function BestSellersPage() {
                             <>
                                 <div className={`grid gap-x-4 gap-y-8 grid-cols-2 ${filterOpen ? 'md:grid-cols-2 lg:grid-cols-3' : 'md:grid-cols-3 lg:grid-cols-4'}`}>
                                     {products.map((product) => (
-                                        <ProductCard key={product.id} product={product} variant="product" hideWishlist={true} />
+                                        <ProductCard key={product.id} product={product} variant="product" hideWishlist={true} hideAddToCart={true} />
                                     ))}
                                 </div>
                                 <Pagination

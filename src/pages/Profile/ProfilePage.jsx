@@ -17,7 +17,7 @@ import { getWishlistItems } from "@/services/wishlist";
  */
 const getCategorySlug = (categoryName) => {
   if (!categoryName) return 'products';
-  
+
   const categoryMap = {
     'clothing': 'clothing',
     'makeup': 'makeup',
@@ -802,7 +802,7 @@ export default function ProfilePage() {
           const productId = item.product?.id || item.product_id || item.id;
           const categoryName = item.product?.product_category?.name;
           const categorySlug = getCategorySlug(categoryName);
-          
+
           return {
             id: productId,
             name: item.product?.name || item.name || '',
@@ -1388,8 +1388,8 @@ export default function ProfilePage() {
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                   {wishlistItems.map((item) => (
-                    <ProductCard 
-                      key={item.id} 
+                    <ProductCard
+                      key={item.id}
                       product={item}
                       hideAddToCart={true}
                     />

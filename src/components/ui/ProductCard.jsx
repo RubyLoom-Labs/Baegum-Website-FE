@@ -19,10 +19,10 @@ import cartIcon from "@/assets/icons/cart.svg";
 export default function ProductCard({ product, variant = "product", hideWishlist = false, hideAddToCart = false, onAddToCart }) {
   const [hovered,    setHovered]    = useState(false);
   const [btnHovered, setBtnHovered] = useState(false);
-  
+
   const { toggleItem, isWishlisted: isWishlistedInContext, loading } = useWishlist();
   const { isLoggedIn, openLogin } = useAuth();
-  
+
   // Once wishlist context is loaded, use it as source of truth
   // Before loading completes, use API response as temporary placeholder
   // This ensures heart updates immediately on click and stays updated
@@ -32,13 +32,13 @@ export default function ProductCard({ product, variant = "product", hideWishlist
 
   const handleWishlistToggle = (e) => {
     e.preventDefault();
-    
+
     // If not logged in, show login popup
     if (!isLoggedIn) {
       openLogin();
       return;
     }
-    
+
     // If logged in, toggle wishlist
     toggleItem({
       id: product.id,

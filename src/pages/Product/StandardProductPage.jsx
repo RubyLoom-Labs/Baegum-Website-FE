@@ -326,8 +326,8 @@ export default function StandardProductPage({ product, categoryId }) {
     }
   };
 
-  const wishlisted = product.is_wishlisted !== undefined 
-    ? product.is_wishlisted 
+  const wishlisted = product.is_wishlisted !== undefined
+    ? product.is_wishlisted
     : isWishlisted(product.id);
 
   return (

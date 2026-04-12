@@ -66,3 +66,29 @@ export const getOrderReviews = async (orderId) => {
   const response = await api.get(`/api/reviews/order/${orderId}`);
   return response;
 }
+
+/**
+ * Get best selling products with optional filters
+ * GET /api/best-sellers?page=1&{filter_key}[]=value
+ * @param {number} page - Page number (default: 1)
+ * @param {object} filters - Filter parameters (brand, color, price range, etc.)
+ * @returns {Promise} Response with paginated best sellers products
+ */
+export const getBestSellers = async (page = 1, filters = {}) => {
+  const params = new URLSearchParams()
+  params.append('page', page)
+
+  // Add filters to query string
+  Object.keys(filters).forEach(key => {
+    if (Array.isArray(filters[key])) {
+      filters[key].forEach(value => {
+        params.append(`${key}[]`, value)
+      })
+    } else {
+      params.append(key, filters[key])
+    }
+  })
+
+  const response = await api.get(`/api/best-sellers?${params.toString()}`)
+  return response;
+}

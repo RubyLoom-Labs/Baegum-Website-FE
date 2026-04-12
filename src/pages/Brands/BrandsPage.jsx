@@ -126,7 +126,7 @@ export default function BrandsPage() {
                             <>
                                 <div className={`grid gap-x-4 gap-y-8 grid-cols-2 ${filterOpen ? 'md:grid-cols-2 lg:grid-cols-3' : 'md:grid-cols-3 lg:grid-cols-4'}`}>
                                     {products.map((product) => (
-                                        <ProductCard key={product.id} product={product} variant="product" hideWishlist={true} />
+                                        <ProductCard key={product.id} product={product} variant="product" hideWishlist={true} hideAddToCart={true} />
                                     ))}
                                 </div>
                                 <Pagination

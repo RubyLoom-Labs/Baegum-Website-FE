@@ -18,7 +18,7 @@ export function WishlistProvider({ children }) {
     const fetchWishlist = async () => {
       try {
         setLoading(true);
-        
+
         // If not logged in, clear wishlist
         if (!isLoggedIn) {
           setItems([]);
@@ -26,7 +26,7 @@ export function WishlistProvider({ children }) {
         }
 
         const response = await getWishlistItems();
-        
+
         // Handle different response structures
         let wishlistData = response;
         if (response.data) {
