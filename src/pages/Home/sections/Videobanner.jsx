@@ -21,10 +21,10 @@ export default function VideoBanner() {
           muted
           loop
           playsInline
-          className="w-full object-cover"
+          className="w-full object-cover h-[80vh]"
           style={{
             display:   "block",
-            maxHeight: "600px",
+            maxHeight: "800px",
             // Mobile: no max height — fills naturally
           }}
         >
@@ -37,10 +37,10 @@ export default function VideoBanner() {
           src={bannerImage}
           alt="Video Banner"
           draggable={false}
-          className="w-full object-cover select-none"
+          className="w-full object-cover select-none h-[80vh]"
           style={{
             display:   "block",
-            maxHeight: "600px",
+            maxHeight: "800px",
           }}
         />
       )}
