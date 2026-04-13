@@ -98,6 +98,7 @@ async function apiRequest(endpoint, options = {}) {
 
   try {
     const response = await fetch(url, { ...defaultOptions, ...options })
+    
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
