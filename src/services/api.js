@@ -80,7 +80,6 @@ async function apiRequest(endpoint, options = {}) {
   const defaultOptions = {
     headers: {},
     timeout: API_TIMEOUT,
-    redirect: 'manual', // Prevent automatic redirects
   }
 
   // Only set Content-Type if not a FormData request
@@ -100,25 +99,6 @@ async function apiRequest(endpoint, options = {}) {
   try {
     const response = await fetch(url, { ...defaultOptions, ...options })
     
-    // Log the actual request URL for debugging
-    console.log('API Request:', {
-      requestedURL: url,
-      endpoint: endpoint,
-      baseURL: API_URL,
-      actualURL: response.url,
-      status: response.status
-    });
-
-    // Handle redirects manually - prevent redirect to /login
-    if (response.status === 301 || response.status === 302 || response.status === 303 || response.status === 307 || response.status === 308) {
-      const redirectURL = response.headers.get('Location');
-      console.warn('Server redirect detected:', redirectURL);
-      // Don't follow redirects that go to /login without /api/auth/
-      if (redirectURL && !redirectURL.includes('/api/auth/login') && redirectURL.includes('/login')) {
-        throw new Error('Authentication required. Please login.');
-      }
-    }
-
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
