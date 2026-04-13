@@ -163,15 +163,15 @@ export default function HeroBanner() {
             <img
               src={slide.desktop}
               alt={slide.alt}
-              className="hidden md:block w-full object-contain object-center"
-              style={{ maxHeight: "650px" }}
+              className="hidden md:block w-full object-cover object-center h-[75vh]"
+              style={{ maxHeight: "100vh" }}
               draggable={false}
             />
             {/* Mobile */}
             <img
               src={slide.mobile}
               alt={slide.alt}
-              className="block md:hidden w-full h-auto object-contain"
+              className="block md:hidden w-full h-[60vh] object-cover object-center"
               draggable={false}
             />
           </a>
