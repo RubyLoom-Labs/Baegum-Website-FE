@@ -37,7 +37,7 @@ const getFullImageUrl = (imagePath) => {
   }
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
   const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-  return `${apiUrl}/${cleanPath}`;
+  return `${apiUrl}/storage/${cleanPath}`;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -170,7 +170,7 @@ export default function TopTrends() {
         const formattedTrends = productsData.slice(0, 10).map((product) => {
           const categoryName = product.product_category?.name;
           const categorySlug = getCategorySlug(categoryName);
-          const productImage = product.image || product.product?.images?.[0];
+          const productImage = product.photos[0]?.photo_path || '';
 
           return {
             id: product.id,
