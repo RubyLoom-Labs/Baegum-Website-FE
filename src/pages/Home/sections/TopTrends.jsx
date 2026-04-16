@@ -87,7 +87,7 @@ function TrendCard({ icon, label, href, active, onClick }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className="group flex items-center justify-center rounded-xl border bg-white
-                 transition-all duration-300 ease-out p-6"
+                 transition-all duration-300 ease-out p-10"
       style={{
         borderColor:  isActive ? "#1a1a1a"                              : "#e5e7eb",
         boxShadow:    isActive ? "0 4px 20px rgba(0,0,0,0.10)"         : "none",

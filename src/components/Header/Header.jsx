@@ -83,7 +83,7 @@ function IconButton({ defaultSrc, hoverSrc, size = 20, className = "", badge, on
 
 // ── Logo ─────────────────────────────────────────────────────────────────────
 
-function Logo({ height = 22, className = "", onClick }) {
+function Logo({ height = 24, className = "", onClick }) {
   return (
     <button
       onClick={onClick}
@@ -187,25 +187,25 @@ export default function Header() {
         <div className="max-w-screen-xl mx-auto px-6 flex items-center justify-between h-14 relative">
 
           {/* Search bar */}
-          <div className="flex items-center gap-2 border border-gray-100 bg-gray-100 rounded-md px-3 py-1.5 w-52 hover:border-gray-400 transition-colors cursor-text">
-            <img src={searchDefault} width={15} height={15} alt="" />
+          <div className="flex items-center gap-2 border border-gray-100 bg-gray-100 rounded-md px-3 py-1.5 w-58 hover:border-gray-400 transition-colors cursor-text">
+            <img src={searchDefault} width={18} height={18} alt="" />
             <input
               type="text"
               placeholder="Search....."
-              className="text-xs text-gray-500 bg-transparent outline-none w-full placeholder-gray-400 font-light"
+              className="text-sm text-gray-500 bg-transparent outline-none w-full placeholder-gray-400 font-light"
             />
           </div>
 
           {/* Logo — centred */}
           <div className="absolute left-1/2 -translate-x-1/2">
-            <Logo height={22} onClick={() => navigate('/')} />
+            <Logo height={25} onClick={() => navigate('/')} />
           </div>
 
           {/* Right icons */}
           <div className="flex items-center gap-2">
-            <IconButton defaultSrc={userDefault} hoverSrc={userHover} size={19} ariaLabel="Account" onClick={handleProfileClick} />
+            <IconButton defaultSrc={userDefault} hoverSrc={userHover} size={22} ariaLabel="Account" onClick={handleProfileClick} />
             {/* <IconButton defaultSrc={wishlistDefault} hoverSrc={wishlistHover} size={19} ariaLabel="Wishlist" onClick={openWishlist} /> */}
-            <IconButton defaultSrc={cartDefault} hoverSrc={cartHover} size={19} ariaLabel="Cart" badge={cartCount} onClick={openCart} />
+            <IconButton defaultSrc={cartDefault} hoverSrc={cartHover} size={22} ariaLabel="Cart" badge={cartCount} onClick={openCart} />
           </div>
         </div>
 

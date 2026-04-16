@@ -8,6 +8,7 @@ import { getPromos } from "@/services/promo";
 import promoBg1 from "@/assets/banners/promo/cream-set.png";
 import promoBg2 from "@/assets/banners/promo/shampoo-set.png";
 import promoBg3 from "@/assets/banners/promo/perfume-set.png";
+import promoBg4 from "@/assets/banners/promo/perfume-set.png";
 
 // Helper function to construct full image URL
 const getFullImageUrl = (imagePath) => {
@@ -53,6 +54,16 @@ const FALLBACK_PROMOS = [
   {
     id: 3,
     image:    promoBg3,
+    alt:      "Luxurious Perfume Set — Save 20% with code SCENTSE20",
+    btnLabel: "SHOP NOW ...",
+    btnBg:    "#1a1a1a",
+    btnText:  "#ffffff",
+    btnHoverBg: "#333333",
+    href: "#",
+  },
+  {
+    id: 4,
+    image:    promoBg4,
     alt:      "Luxurious Perfume Set — Save 20% with code SCENTSE20",
     btnLabel: "SHOP NOW ...",
     btnBg:    "#1a1a1a",
@@ -241,7 +252,7 @@ export default function PromoBanners() {
     <section className="w-full py-10 pt-0 bg-white">
 
       {/* ── Desktop: 3 cols ─────────────────────────────────────── */}
-      <div className="hidden md:grid md:grid-cols-3 gap-4 max-w-screen-xl mx-auto px-6">
+      <div className="hidden md:grid md:grid-cols-4 gap-4">
         {promos.map((promo) => (
           <PromoCard key={promo.id} promo={promo} />
         ))}

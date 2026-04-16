@@ -251,8 +251,17 @@ export default function Footer() {
       <div className="border-t border-gray-200">
         <div className="max-w-screen-xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-center gap-3">
 
-          <p className="text-[11px] text-gray-400 font-light">
-            Developed & maintain by <a href="https://ooralabs.com" target="_blank" rel="noopener noreferrer" className="hover:text-[#1a1a1a] transition-colors underline underline-offset-2">OORA Labs</a>
+          <p className="text-[11px] text-gray-400 font-light text-center">
+            © {new Date().getFullYear()} OORA Labs. All rights reserved.
+            Developed and maintained by{" "}
+            <a
+              href="https://ooralabs.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[#1a1a1a] transition-colors underline underline-offset-2"
+            >
+              OORA Labs
+            </a>
           </p>
 
         </div>
