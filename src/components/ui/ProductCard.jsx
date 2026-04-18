@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
 
@@ -16,9 +16,10 @@ import cartIcon from "@/assets/icons/cart.svg";
 //    <ProductCard product={p} />                      ← all other pages
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function ProductCard({ product, variant = "product", hideWishlist = false, hideAddToCart = false, onAddToCart }) {
+export default function ProductCard({ product, variant = "product", hideWishlist = false, hideAddToCart = false }) {
   const [hovered,    setHovered]    = useState(false);
   const [btnHovered, setBtnHovered] = useState(false);
+  const navigate = useNavigate();
 
   const { toggleItem, isWishlisted: isWishlistedInContext, loading } = useWishlist();
   const { isLoggedIn, openLogin } = useAuth();
@@ -128,8 +129,8 @@ export default function ProductCard({ product, variant = "product", hideWishlist
               onMouseLeave={() => setBtnHovered(false)}
               onClick={(e) => {
                 e.preventDefault();
-                if (onAddToCart) {
-                  onAddToCart(product);
+                if (product.href) {
+                  navigate(product.href);
                 }
               }}
               className="px-16 py-3 text-[13px] font-normal tracking-wide transition-colors duration-200"
@@ -138,7 +139,7 @@ export default function ProductCard({ product, variant = "product", hideWishlist
                 color:           btnHovered ? "#ffffff" : "#1a1a1a",
               }}
             >
-              Add to Cart
+              View Details
             </button>
           </div>
         )}

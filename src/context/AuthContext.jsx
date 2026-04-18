@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { setCookie, getCookie, removeCookie } from "@/utils/cookies";
+import { setAuthErrorHandler } from "@/services/api";
 
 const AuthContext = createContext(null);
 
@@ -52,6 +53,12 @@ export function AuthProvider({ children }) {
     setIsLoggedIn(false);
     setUser(null);
   };
+
+  // Register the logout handler with the API service
+  // This allows the API service to automatically logout when token is invalid
+  useEffect(() => {
+    setAuthErrorHandler(logout);
+  }, []);
 
   return (
     <AuthContext.Provider value={{

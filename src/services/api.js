@@ -3,10 +3,21 @@
  * Centralized place for all API calls
  */
 
-import { getCookie } from '@/utils/cookies';
+import { getCookie, removeCookie } from '@/utils/cookies';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 const API_TIMEOUT = import.meta.env.VITE_API_TIMEOUT || 10000
+
+// Auth error handler callback
+let authErrorHandler = null;
+
+/**
+ * Register a callback to be called when authentication fails (401/403)
+ * This allows the API service to trigger logout in the auth context
+ */
+export function setAuthErrorHandler(callback) {
+  authErrorHandler = callback;
+}
 
 /**
  * Get authorization token from cookie
@@ -102,6 +113,20 @@ async function apiRequest(endpoint, options = {}) {
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
+      // Handle authentication errors (401 Unauthorized, 403 Forbidden)
+      if (response.status === 401 || response.status === 403) {
+        console.warn('Authentication error detected. Clearing token and logging out.');
+        
+        // Immediately clear the token from cookies
+        removeCookie('authToken');
+        localStorage.removeItem('user');
+        
+        // Call the registered auth error handler to trigger logout in AuthContext
+        if (authErrorHandler && typeof authErrorHandler === 'function') {
+          authErrorHandler();
+        }
+      }
+      
       const error = new APIError(response.status, response.statusText, data);
       console.error('API Error:', {
         status: error.status,

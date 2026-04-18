@@ -223,7 +223,10 @@ function DesktopSection({ tabs, activeTab, setActiveTab, loading, products, load
                   scrollSnapAlign: "start",
                 }}
               >
-                <ProductCard product={product} variant="clothing" />
+                <ProductCard 
+                  product={product} 
+                  variant="clothing"
+                />
               </div>
             ))
           ) : (
@@ -237,7 +240,7 @@ function DesktopSection({ tabs, activeTab, setActiveTab, loading, products, load
       {/* ── View All button ────────────────────────────────────────── */}
       <div className="flex justify-center mt-7 mb-2">
         <Link
-          to={tab.href}
+          to="/clothing"
           className="px-16 py-3 border border-gray-300 text-[#1a1a1a] text-[13px]
                      font-light tracking-wide hover:border-[#1a1a1a] hover:bg-gray-50
                      active:bg-gray-100 transition-colors"
@@ -473,8 +476,20 @@ export default function ProductTabs() {
 
   return (
     <section className="w-full bg-white py-14" style={{ maxWidth: "1920px", margin: "0 auto" }}>
-      <DesktopSection tabs={tabsToUse} activeTab={activeTabId} setActiveTab={setActiveTab} loading={loading} products={displayProducts} loadingProducts={loadingProducts} />
-      <MobileSection tabs={tabsToUse} loading={loading} products={displayProducts} loadingProducts={loadingProducts} />
+      <DesktopSection 
+        tabs={tabsToUse} 
+        activeTab={activeTabId} 
+        setActiveTab={setActiveTab} 
+        loading={loading} 
+        products={displayProducts} 
+        loadingProducts={loadingProducts}
+      />
+      <MobileSection 
+        tabs={tabsToUse} 
+        loading={loading} 
+        products={displayProducts} 
+        loadingProducts={loadingProducts}
+      />
     </section>
   );
 }
