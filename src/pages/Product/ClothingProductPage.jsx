@@ -15,6 +15,19 @@ import "./ClothingProductPage.css";
 // CLOTHING PRODUCT PAGE
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Convert photo_path to full image URL
+ */
+const getFullImageUrl = (photoPath) => {
+  if (!photoPath) return null;
+  if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+    return photoPath;
+  }
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const cleanPath = photoPath.startsWith('/') ? photoPath.substring(1) : photoPath;
+  return `${apiUrl}/storage/${cleanPath}`;
+};
+
 export default function ClothingProductPage({ product, categoryId }) {
   const { addItem, openCart } = useCart();
   const { toggleItem, isWishlisted } = useWishlist();
@@ -39,6 +52,17 @@ export default function ClothingProductPage({ product, categoryId }) {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [toast,           setToast]           = useState(null);
+  const [images,          setImages]          = useState([]);
+
+  // Transform product photos into image URLs
+  useEffect(() => {
+    if (product?.photos && Array.isArray(product.photos)) {
+      const imageUrls = product.photos.map(photo => getFullImageUrl(photo.photo_path)).filter(Boolean);
+      setImages(imageUrls);
+    } else if (product?.images) {
+      setImages(product.images);
+    }
+  }, [product?.id, product?.photos, product?.images]);
 
   // Fetch all available sizes for this category
   useEffect(() => {
@@ -337,7 +361,7 @@ export default function ClothingProductPage({ product, categoryId }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16">
 
           {/* Left: clothing masonry gallery */}
-          <ClothingGallery images={product.images || []} />
+          <ClothingGallery images={images.length > 0 ? images : product.images || []} />
 
           {/* Right: product info */}
           <div className="flex flex-col">
