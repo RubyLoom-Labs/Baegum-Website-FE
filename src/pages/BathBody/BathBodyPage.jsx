@@ -7,15 +7,38 @@ import placeholder from '@/assets/products/bath-body/p1.png'
 
 const ITEMS_PER_PAGE = 12
 
+const getProductImage = (apiProduct) => {
+  if (!apiProduct) return placeholder
+  
+  // Try to get image from photos array (prioritize primary photo)
+  const photos = apiProduct.photos || []
+  let photoPath = null
+  
+  if (photos.length > 0) {
+    const primaryPhoto = photos.find(p => p.is_primary)
+    photoPath = primaryPhoto?.photo_path || photos[0]?.photo_path
+  }
+  
+  if (photoPath) {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+    const cleanPath = photoPath.startsWith('/') ? photoPath.substring(1) : photoPath
+    return `${apiUrl}/storage/${cleanPath}`
+  }
+  
+  return placeholder
+}
+
 const formatProduct = (apiProduct) => {
     const variant = apiProduct.product_variants?.[2]
     return {
         id: apiProduct.id,
-        image: apiProduct.image || placeholder,
+        image: getProductImage(apiProduct),
         name: apiProduct.name,
         description: apiProduct.sub_topic || `${apiProduct.brand?.name || ''} - ${apiProduct.product_category?.name || ''}`,
         price: `Rs.${parseFloat(apiProduct.price).toFixed(2)}` ?? 'Rs.0.00',
-        href: `/products/bath-body/${apiProduct.id}`,        is_wishlisted: apiProduct.is_wishlisted || false,    }
+        href: `/products/bath-body/${apiProduct.id}`,
+        is_wishlisted: apiProduct.is_wishlisted || false,
+    }
 }
 
 const FilterIcon = () => (

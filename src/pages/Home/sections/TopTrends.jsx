@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getBestSellers } from "@/services/product";
+import { getProductCategories } from "@/services/product";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER FUNCTIONS
@@ -41,35 +41,10 @@ const getFullImageUrl = (imagePath) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-
-import iconShorts    from "@/assets/icons/trends/shorts.svg";
-import iconShorts2   from "@/assets/icons/trends/shorts2.svg";
-import iconPerfume   from "@/assets/icons/trends/perfume.svg";
-import iconHandbag   from "@/assets/icons/trends/handbag.svg";
-import iconSoap      from "@/assets/icons/trends/soap.svg";
-import iconTshirt1   from "@/assets/icons/trends/tshirt1.svg";
-import iconTshirt2   from "@/assets/icons/trends/tshirt2.svg";
-import iconTshirt3   from "@/assets/icons/trends/tshirt3.svg";
-import iconTshirt4   from "@/assets/icons/trends/tshirt4.svg";
-import iconSneaker   from "@/assets/icons/trends/sneaker.svg";
-
-// ─────────────────────────────────────────────────────────────────────────────
 // DATA
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TRENDS = [
-  { id: 1,  icon: iconShorts,  label: "Shorts",    href: "#" },
-  { id: 2,  icon: iconShorts2, label: "Bottoms",   href: "#" },
-  { id: 3,  icon: iconPerfume, label: "Fragrance", href: "#" },
-  { id: 4,  icon: iconHandbag, label: "Bags",      href: "#" },
-  { id: 5,  icon: iconSoap,    label: "Skincare",  href: "#" },
-  { id: 6,  icon: iconTshirt1, label: "Tops",      href: "#" },
-  { id: 7,  icon: iconTshirt2, label: "T-Shirts",  href: "#" },
-  { id: 8,  icon: iconTshirt3, label: "Casual",    href: "#" },
-  { id: 9,  icon: iconTshirt4, label: "Basic",     href: "#" },
-  { id: 10, icon: iconSneaker, label: "Footwear",  href: "#" },
-];
+const TRENDS = [];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DESKTOP TREND CARD
@@ -156,44 +131,46 @@ export default function TopTrends() {
   const [trends, setTrends] = useState(TRENDS);
   const [loading, setLoading] = useState(true);
 
-  // Fetch best sellers and format as trends
+  // Fetch product categories and format as trends
   useEffect(() => {
-    const fetchBestSellers = async () => {
+    const fetchCategories = async () => {
       try {
         setLoading(true);
-        const response = await getBestSellers(1, {});
+        const response = await getProductCategories();
 
-        // Extract products from response
-        const productsData = response.data || response.products || [];
+        // Extract categories from response - the API returns paginated data under response.data.data
+        const categoriesData = response.data?.data || response.data || response.categories || [];
 
-        // Format best sellers as trends (limit to 10 items)
-        const formattedTrends = productsData.slice(0, 10).map((product) => {
-          const categoryName = product.product_category?.name;
-          const categorySlug = getCategorySlug(categoryName);
-          const productImage = product.photos[0]?.photo_path || '';
+        // Format categories as trends
+        const formattedTrends = categoriesData.slice(0, 10).map((category) => {
+          const categorySlug = getCategorySlug(category.name);
+          // Use the icon from backend
+          const categoryIcon = category.icon || '';
 
           return {
-            id: product.id,
-            icon: getFullImageUrl(productImage) || null,
-            label: product.name,
-            href: `/products/${categorySlug}/${product.id}`,
+            id: category.id,
+            icon: getFullImageUrl(categoryIcon) || null,
+            label: category.name,
+            href: `/${categorySlug}`,
           };
         });
 
-        // Use fetched data if available, otherwise fallback to static TRENDS
+        // Use fetched data if available, otherwise fallback to empty array
         if (formattedTrends.length > 0) {
           setTrends(formattedTrends);
+        } else {
+          setTrends([]);
         }
       } catch (error) {
-        console.error('Failed to fetch best sellers for trends:', error);
-        // Use fallback static data
-        setTrends(TRENDS);
+        console.error('Failed to fetch categories for trends:', error);
+        // Use empty fallback
+        setTrends([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBestSellers();
+    fetchCategories();
   }, []);
 
   return (

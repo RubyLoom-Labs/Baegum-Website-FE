@@ -7,10 +7,38 @@ import placeholder from '@/assets/products/skincare/p1.png'
 
 const ITEMS_PER_PAGE = 12
 
+const getProductImage = (apiBrand) => {
+    if (!apiBrand) return placeholder
+    
+    // Try to get image from photos array (prioritize primary photo)
+    const photos = apiBrand.photos || []
+    let photoPath = null
+    
+    if (photos.length > 0) {
+      const primaryPhoto = photos.find(p => p.is_primary)
+      photoPath = primaryPhoto?.photo_path || photos[0]?.photo_path
+    }
+    
+    if (photoPath) {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+      const cleanPath = photoPath.startsWith('/') ? photoPath.substring(1) : photoPath
+      return `${apiUrl}/storage/${cleanPath}`
+    }
+    
+    // Fallback to brand logo or placeholder
+    if (apiBrand.image) {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+      const cleanPath = apiBrand.image.startsWith('/') ? apiBrand.image.substring(1) : apiBrand.image
+      return `${apiUrl}/storage/${cleanPath}`
+    }
+    
+    return placeholder
+}
+
 const formatProduct = (apiBrand) => {
     return {
         id: apiBrand.id,
-        image: apiBrand.image || placeholder,
+        image: getProductImage(apiBrand),
         name: apiBrand.name,
         description: apiBrand.description || '',
         price: 'View Details',

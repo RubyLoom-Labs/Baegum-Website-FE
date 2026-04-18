@@ -92,3 +92,8 @@ export const getBestSellers = async (page = 1, filters = {}) => {
   const response = await api.get(`/api/best-sellers?${params.toString()}`)
   return response;
 }
+
+export const getProductCategories = async () => {
+  const response = await api.get('/api/product-categories')
+  return response;
+}
