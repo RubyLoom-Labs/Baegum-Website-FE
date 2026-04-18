@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ProductCard from "@/components/ui/ProductCard";
+import { getFirstPageOccasions, getProductsByOccasionId } from "@/services/occasions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 🗂️  ASSET CONFIG
@@ -18,6 +19,44 @@ import p2 from "@/assets/products/clothing/p1.png";
 import p3 from "@/assets/products/clothing/p1.png";
 import p4 from "@/assets/products/clothing/p1.png";
 import p5 from "@/assets/products/clothing/p1.png";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER FUNCTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Convert product photo path to full image URL
+ */
+const getFullProductImageUrl = (photoPath) => {
+  if (!photoPath) return p1;
+  if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+    return photoPath;
+  }
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const cleanPath = photoPath.startsWith('/') ? photoPath.substring(1) : photoPath;
+  return `${apiUrl}/storage/${cleanPath}`;
+};
+
+/**
+ * Format API product response to card format
+ */
+const formatProductForCard = (apiProduct, categorySlug = 'clothing') => {
+  if (!apiProduct) return null;
+
+  // Get the first photo from photos array
+  const photos = apiProduct.photos || [];
+  const primaryPhoto = photos.find(p => p.is_primary) || photos[0];
+  const imageUrl = primaryPhoto ? getFullProductImageUrl(primaryPhoto.photo_path) : p1;
+
+  return {
+    id: apiProduct.id,
+    image: imageUrl,
+    name: apiProduct.name,
+    description: apiProduct.sub_topic || `${apiProduct.brand?.name || ''} - ${apiProduct.product_category?.name || ''}`,
+    price: `Rs.${parseFloat(apiProduct.price).toFixed(2)}`,
+    href: `/products/${categorySlug}/${apiProduct.id}`,
+  };
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA
@@ -112,26 +151,30 @@ function ArrowBtn({ direction, onClick }) {
 // DESKTOP SECTION
 // ─────────────────────────────────────────────────────────────────────────────
 
-function DesktopSection({ activeTab, setActiveTab }) {
+function DesktopSection({ tabs, activeTab, setActiveTab, loading, products, loadingProducts }) {
   const scrollRef = useRef(null);
-  const tab = TABS.find((t) => t.id === activeTab) || TABS[0];
+  const tab = tabs.find((t) => t.id === activeTab) || tabs[0];
 
   const scroll = (dir) => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollBy({ left: dir === "left" ? -320 : 320, behavior: "smooth" });
   };
 
+  if (loading || !tab) return null;
+
   return (
     <div className="hidden md:block w-full">
 
       {/* ── Tab navigation ──────────────────────────────────────── */}
       <div className="flex items-center justify-center gap-8 px-6 mb-6">
-        {TABS.map((t) => {
+        {tabs.map((t) => {
           const isActive = t.id === activeTab;
           return (
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
+              data-occasion-id={t.occasionId}
+              title={`ID: ${t.occasionId}`}
               className="relative pb-1 text-[14px] tracking-wide transition-colors duration-200"
               style={{
                 color:      isActive ? "#FF8989" : "#6b7280",
@@ -166,18 +209,28 @@ function DesktopSection({ activeTab, setActiveTab }) {
             scrollSnapType:   "x mandatory",
           }}
         >
-          {tab.products.map((product) => (
-            <div
-              key={product.id}
-              className="flex-shrink-0 px-2"
-              style={{
-                width:         "calc(20% + 4px)", // ~5 cards visible
-                scrollSnapAlign: "start",
-              }}
-            >
-              <ProductCard product={product} variant="clothing" />
+          {loadingProducts ? (
+            <div className="w-full flex items-center justify-center py-8">
+              <p className="text-gray-500">Loading products...</p>
             </div>
-          ))}
+          ) : products.length > 0 ? (
+            products.map((product) => (
+              <div
+                key={product.id}
+                className="flex-shrink-0 px-2"
+                style={{
+                  width:         "calc(20% + 4px)", // ~5 cards visible
+                  scrollSnapAlign: "start",
+                }}
+              >
+                <ProductCard product={product} variant="clothing" />
+              </div>
+            ))
+          ) : (
+            <div className="w-full flex items-center justify-center py-8">
+              <p className="text-gray-500">No products available</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -200,13 +253,13 @@ function DesktopSection({ activeTab, setActiveTab }) {
 // MOBILE SECTION — 4 category image cards carousel
 // ─────────────────────────────────────────────────────────────────────────────
 
-function MobileSection() {
+function MobileSection({ tabs, loading, products, loadingProducts }) {
   const [current, setCurrent] = useState(0);
   const [dragStart, setDragStart] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const timerRef = useRef(null);
 
-  const total = TABS.length;
+  const total = tabs.length;
 
   const goTo = (i) => setCurrent((i + total) % total);
   const next  = () => goTo(current + 1);
@@ -221,9 +274,11 @@ function MobileSection() {
   };
 
   useEffect(() => {
-    resetTimer();
+    if (!loading && total > 0) {
+      resetTimer();
+    }
     return () => clearInterval(timerRef.current);
-  }, []);
+  }, [loading, total]);
 
   const onDragStart = (x) => { setDragStart(x); setIsDragging(false); };
   const onDragMove  = (x) => { if (dragStart !== null && Math.abs(x - dragStart) > 5) setIsDragging(true); };
@@ -235,7 +290,9 @@ function MobileSection() {
     setTimeout(() => setIsDragging(false), 0);
   };
 
-  const tab = TABS[current];
+  if (loading || tabs.length === 0) return null;
+
+  const tab = tabs[current];
 
   return (
     <div className="md:hidden w-full px-4">
@@ -256,7 +313,7 @@ function MobileSection() {
           className="absolute inset-0 flex transition-transform duration-500 ease-in-out"
           style={{ transform: `translateX(-${current * 100}%)`, width: `${total * 100}%` }}
         >
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <div
               key={t.id}
               className="relative flex-shrink-0 h-full"
@@ -278,8 +335,9 @@ function MobileSection() {
 
         {/* Text overlay — bottom of card */}
         <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 z-10">
-          <h3 className="text-white text-[21px] font-light tracking-wide leading-tight mb-1">
-            {tab.label} Dresses
+          <h3 className="text-white text-[21px] font-light tracking-wide leading-tight mb-1"
+              data-occasion-id={tab.occasionId}>
+            {tab.label}
           </h3>
           <p className="text-white/75 text-[13px] font-light mb-4">
             {tab.subtitle}
@@ -298,11 +356,11 @@ function MobileSection() {
 
       {/* Dots — below the card, clearly visible */}
       <div className="flex justify-center gap-2 mt-4 mb-2">
-        {TABS.map((_, i) => (
+        {tabs.map((_, i) => (
           <button
             key={i}
             onClick={() => { goTo(i); resetTimer(); }}
-            aria-label={`Go to ${TABS[i].label}`}
+            aria-label={`Go to ${tabs[i].label}`}
             className="rounded-full transition-all duration-300"
             style={{
               width:           i === current ? "18px" : "6px",
@@ -321,12 +379,102 @@ function MobileSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function ProductTabs() {
-  const [activeTab, setActiveTab] = useState("classic-modal");
+  const [activeTab, setActiveTab] = useState(null);
+  const [tabs, setTabs] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loadingOccasions, setLoadingOccasions] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+
+  // Fetch occasions from API
+  useEffect(() => {
+    const fetchOccasions = async () => {
+      try {
+        setLoadingOccasions(true);
+        const response = await getFirstPageOccasions();
+        
+        // Extract occasions data from response
+        const occasions = response.data || [];
+
+        // Map occasions to tab structure
+        const dynamicTabs = occasions.slice(0, 4).map((occasion, index) => {
+          // Use occasion ID as the tab ID, convert name to slug for href
+          const tabId = `occasion-${occasion.id}`;
+          const nameSlug = occasion.name.toLowerCase().replace(/\s+/g, '-');
+          
+          return {
+            id:           tabId,
+            occasionId:   occasion.id,
+            label:        occasion.display_name || occasion.name,
+            occasionName: occasion.name,
+            href:         `/products/${nameSlug}`,
+            subtitle:     `Explore our ${occasion.display_name} collection`,
+            bgImage:      TABS[index]?.bgImage || TABS[0]?.bgImage,
+            products:     [],
+          };
+        });
+
+        setTabs(dynamicTabs);
+        // Set first tab as active
+        if (dynamicTabs.length > 0) {
+          setActiveTab(dynamicTabs[0].id);
+        }
+      } catch (error) {
+        console.error('Failed to fetch occasions:', error);
+        // Fallback to original static TABS
+        setTabs(TABS);
+        setActiveTab(TABS[0]?.id || 'classic-modal');
+      } finally {
+        setLoadingOccasions(false);
+      }
+    };
+
+    fetchOccasions();
+  }, []);
+
+  // Fetch products when active tab changes
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (!activeTab) return;
+
+      const activeTabData = tabs.find(t => t.id === activeTab);
+      if (!activeTabData?.occasionId) return;
+
+      try {
+        setLoadingProducts(true);
+        const response = await getProductsByOccasionId(activeTabData.occasionId, 5);
+        
+        // Extract products from response
+        const productsData = response.data || [];
+
+        // Format products for card display
+        const formattedProducts = productsData.map(product => 
+          formatProductForCard(product, activeTabData.occasionName.toLowerCase())
+        ).filter(Boolean);
+
+        setProducts(formattedProducts);
+      } catch (error) {
+        console.error('Failed to fetch products for occasion:', error);
+        setProducts([]);
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+
+    fetchProducts();
+  }, [activeTab, tabs]);
+
+  const loading = loadingOccasions;
+  const tabsToUse = tabs.length > 0 ? tabs : TABS;
+  const activeTabId = activeTab || (tabsToUse[0]?.id);
+
+  // Get current tab with dynamic products
+  const currentTab = tabsToUse.find(t => t.id === activeTabId);
+  const displayProducts = products.length > 0 ? products : currentTab?.products || [];
 
   return (
     <section className="w-full bg-white py-14" style={{ maxWidth: "1920px", margin: "0 auto" }}>
-      <DesktopSection activeTab={activeTab} setActiveTab={setActiveTab} />
-      <MobileSection />
+      <DesktopSection tabs={tabsToUse} activeTab={activeTabId} setActiveTab={setActiveTab} loading={loading} products={displayProducts} loadingProducts={loadingProducts} />
+      <MobileSection tabs={tabsToUse} loading={loading} products={displayProducts} loadingProducts={loadingProducts} />
     </section>
   );
 }
