@@ -9,29 +9,14 @@ const ITEMS_PER_PAGE = 12
 
 const getProductImage = (apiBrand) => {
     if (!apiBrand) return placeholder
-    
-    // Try to get image from photos array (prioritize primary photo)
-    const photos = apiBrand.photos || []
-    let photoPath = null
-    
-    if (photos.length > 0) {
-      const primaryPhoto = photos.find(p => p.is_primary)
-      photoPath = primaryPhoto?.photo_path || photos[0]?.photo_path
-    }
-    
-    if (photoPath) {
+
+    // Use brand logo from API
+    if (apiBrand.logo) {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-      const cleanPath = photoPath.startsWith('/') ? photoPath.substring(1) : photoPath
+      const cleanPath = apiBrand.logo.startsWith('/') ? apiBrand.logo.substring(1) : apiBrand.logo
       return `${apiUrl}/storage/${cleanPath}`
     }
-    
-    // Fallback to brand logo or placeholder
-    if (apiBrand.image) {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-      const cleanPath = apiBrand.image.startsWith('/') ? apiBrand.image.substring(1) : apiBrand.image
-      return `${apiUrl}/storage/${cleanPath}`
-    }
-    
+
     return placeholder
 }
 
@@ -74,12 +59,13 @@ export default function BrandsPage() {
                     return acc
                 }, {})
                 const response = await getBrands(currentPage, ITEMS_PER_PAGE, filterParams)
-                // Handle paginated response structure
-                const brandsData = response.data?.data || response.data || []
+                // Handle paginated response structure: {data: [...], pagination: {total, per_page, current_page, last_page}}
+                const brandsData = response.data || []
+                const pagination = response.pagination || {}
                 const formatted = brandsData.map(formatProduct)
                 setProducts(formatted)
-                setTotalProducts(response.data?.total || response.total || brandsData.length)
-                setTotalPages(response.data?.last_page || response.total_pages || 1)
+                setTotalProducts(pagination.total || brandsData.length)
+                setTotalPages(pagination.last_page || 1)
             } catch (error) {
                 console.error('Error fetching Brands:', error)
             } finally {

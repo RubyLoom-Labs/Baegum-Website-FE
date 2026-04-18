@@ -9,22 +9,22 @@ const ITEMS_PER_PAGE = 12
 
 const getProductImage = (apiProduct) => {
   if (!apiProduct) return placeholder
-  
+
   // Try to get image from photos array (prioritize primary photo)
   const photos = apiProduct.photos || []
   let photoPath = null
-  
+
   if (photos.length > 0) {
     const primaryPhoto = photos.find(p => p.is_primary)
     photoPath = primaryPhoto?.photo_path || photos[0]?.photo_path
   }
-  
+
   if (photoPath) {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
     const cleanPath = photoPath.startsWith('/') ? photoPath.substring(1) : photoPath
     return `${apiUrl}/storage/${cleanPath}`
   }
-  
+
   return placeholder
 }
 
