@@ -223,8 +223,8 @@ function DesktopSection({ tabs, activeTab, setActiveTab, loading, products, load
                   scrollSnapAlign: "start",
                 }}
               >
-                <ProductCard 
-                  product={product} 
+                <ProductCard
+                  product={product}
                   variant="clothing"
                 />
               </div>
@@ -394,7 +394,7 @@ export default function ProductTabs() {
       try {
         setLoadingOccasions(true);
         const response = await getFirstPageOccasions();
-        
+
         // Extract occasions data from response
         const occasions = response.data || [];
 
@@ -403,7 +403,7 @@ export default function ProductTabs() {
           // Use occasion ID as the tab ID, convert name to slug for href
           const tabId = `occasion-${occasion.id}`;
           const nameSlug = occasion.name.toLowerCase().replace(/\s+/g, '-');
-          
+
           return {
             id:           tabId,
             occasionId:   occasion.id,
@@ -445,12 +445,12 @@ export default function ProductTabs() {
       try {
         setLoadingProducts(true);
         const response = await getProductsByOccasionId(activeTabData.occasionId, 5);
-        
+
         // Extract products from response
         const productsData = response.data || [];
 
         // Format products for card display
-        const formattedProducts = productsData.map(product => 
+        const formattedProducts = productsData.map(product =>
           formatProductForCard(product, activeTabData.occasionName.toLowerCase())
         ).filter(Boolean);
 
@@ -476,18 +476,18 @@ export default function ProductTabs() {
 
   return (
     <section className="w-full bg-white py-14" style={{ maxWidth: "1920px", margin: "0 auto" }}>
-      <DesktopSection 
-        tabs={tabsToUse} 
-        activeTab={activeTabId} 
-        setActiveTab={setActiveTab} 
-        loading={loading} 
-        products={displayProducts} 
+      <DesktopSection
+        tabs={tabsToUse}
+        activeTab={activeTabId}
+        setActiveTab={setActiveTab}
+        loading={loading}
+        products={displayProducts}
         loadingProducts={loadingProducts}
       />
-      <MobileSection 
-        tabs={tabsToUse} 
-        loading={loading} 
-        products={displayProducts} 
+      <MobileSection
+        tabs={tabsToUse}
+        loading={loading}
+        products={displayProducts}
         loadingProducts={loadingProducts}
       />
     </section>

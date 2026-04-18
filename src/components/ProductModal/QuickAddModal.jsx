@@ -129,7 +129,7 @@ export default function QuickAddModal({ productId, isOpen, onClose, categoryId }
     setSelectedColor(color);
     setSelectedColorId(color.id);
     setColorError(false);
-    
+
     // Update price if variant has special price
     const variant = findMatchingVariant(color.id, selectedSizeId);
     if (variant?.special_price) {
@@ -147,7 +147,7 @@ export default function QuickAddModal({ productId, isOpen, onClose, categoryId }
     setSelectedSize(size);
     setSelectedSizeId(size.id);
     setSizeError(false);
-    
+
     // Update price if variant has special price
     const variant = findMatchingVariant(selectedColorId, size.id);
     if (variant?.special_price) {

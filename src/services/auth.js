@@ -78,9 +78,29 @@ export async function requestPasswordReset(email) {
   }
 }
 
+/**
+ * Reset password with token and new password
+ * @param {string} token - Reset token from email
+ * @param {string} password - New password
+ * @returns {Promise}
+ */
+export async function resetPasswordWithToken(token, password) {
+  try {
+    const response = await post('/api/auth/reset-password', {
+      token,
+      password,
+    });
+    return response;
+  } catch (error) {
+    console.error('Password reset failed:', error);
+    throw error;
+  }
+}
+
 export default {
   loginWithEmail,
   signupWithEmail,
   loginWithGoogle,
   requestPasswordReset,
+  resetPasswordWithToken,
 };

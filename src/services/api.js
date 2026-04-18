@@ -109,24 +109,24 @@ async function apiRequest(endpoint, options = {}) {
 
   try {
     const response = await fetch(url, { ...defaultOptions, ...options })
-    
+
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
       // Handle authentication errors (401 Unauthorized, 403 Forbidden)
       if (response.status === 401 || response.status === 403) {
         console.warn('Authentication error detected. Clearing token and logging out.');
-        
+
         // Immediately clear the token from cookies
         removeCookie('authToken');
         localStorage.removeItem('user');
-        
+
         // Call the registered auth error handler to trigger logout in AuthContext
         if (authErrorHandler && typeof authErrorHandler === 'function') {
           authErrorHandler();
         }
       }
-      
+
       const error = new APIError(response.status, response.statusText, data);
       console.error('API Error:', {
         status: error.status,

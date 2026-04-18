@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { loginWithEmail, signupWithEmail, loginWithGoogle, requestPasswordReset } from "@/services/auth";
+import { loginWithEmail, signupWithEmail, loginWithGoogle, requestPasswordReset, resetPasswordWithToken } from "@/services/auth";
 
 // ── Google icon ───────────────────────────────────────────────────────────────
 const GoogleIcon = () => (
@@ -455,10 +455,18 @@ function ForgotForm() {
     setLoading(true);
     try {
       const response = await requestPasswordReset(email);
-      setLoading(false);
-      setSent(true);
+      
+      // Validate response
+      if (response && (response.message || response.data)) {
+        setLoading(false);
+        setSent(true);
+      } else {
+        setLoading(false);
+        setApiError("Failed to send reset email. Please try again.");
+      }
     } catch (error) {
       setLoading(false);
+      console.error('Password reset error:', error);
       setApiError(error.message || "Failed to send reset email. Please try again.");
     }
   };
@@ -539,25 +547,184 @@ function ForgotForm() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AUTH MODAL — wraps all three forms
+// RESET PASSWORD FORM (via email link)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ResetPasswordForm({ token }) {
+  const { openLogin, closeAuth } = useAuth();
+  const [password,    setPassword]    = useState("");
+  const [confirm,     setConfirm]     = useState("");
+  const [showPw,      setShowPw]      = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [errors,      setErrors]      = useState({});
+  const [apiError,    setApiError]    = useState("");
+  const [loading,     setLoading]     = useState(false);
+  const [success,     setSuccess]     = useState(false);
+
+  const validate = () => {
+    const e = {};
+    if (!password)                e.password = "Password is required";
+    else if (password.length < 8) e.password = "At least 8 characters required";
+    if (!confirm)                 e.confirm  = "Please confirm your password";
+    else if (confirm !== password) e.confirm = "Passwords do not match";
+    return e;
+  };
+
+  const handleSubmit = async () => {
+    const e = validate();
+    setErrors(e);
+    setApiError("");
+    if (Object.keys(e).length) return;
+
+    setLoading(true);
+    try {
+      const response = await resetPasswordWithToken(token, password);
+      
+      if (response && (response.message || response.data)) {
+        setLoading(false);
+        setSuccess(true);
+      } else {
+        setLoading(false);
+        setApiError(response?.message || "Failed to reset password. Please try again.");
+      }
+    } catch (error) {
+      setLoading(false);
+      console.error('Password reset error:', error);
+      setApiError(error.message || "Failed to reset password. Please try again.");
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-4 text-center">
+        <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+            stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div>
+          <p className="text-[15px] font-medium text-[#1a1a1a] mb-1">Password Reset!</p>
+          <p className="text-[13px] text-gray-500 font-light max-w-xs">
+            Your password has been successfully reset. You can now login with your new password.
+          </p>
+        </div>
+        <button
+          onClick={openLogin}
+          className="mt-2 text-[13px] text-gray-500 hover:text-[#1a1a1a] transition-colors
+                     underline underline-offset-2 font-light"
+        >
+          Go to Login
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {apiError && (
+        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded flex items-start gap-2.5">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" className="flex-shrink-0 mt-0.5">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p className="text-[12px] text-red-600 font-light leading-relaxed">
+            {apiError}
+          </p>
+        </div>
+      )}
+
+      <p className="text-[13px] text-gray-500 font-light leading-relaxed">
+        Enter your new password below. Make sure it's at least 8 characters long.
+      </p>
+
+      <div>
+        <Input
+          placeholder="Please enter your new Password"
+          type={showPw ? "text" : "password"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          error={errors.password}
+          rightEl={
+            <button onClick={() => setShowPw(!showPw)} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+              <EyeIcon open={showPw} />
+            </button>
+          }
+        />
+        <PasswordStrength password={password} />
+      </div>
+
+      <Input
+        placeholder="Please confirm your new Password"
+        type={showConfirm ? "text" : "password"}
+        value={confirm}
+        onChange={(e) => setConfirm(e.target.value)}
+        error={errors.confirm}
+        rightEl={
+          <button onClick={() => setShowConfirm(!showConfirm)} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+            <EyeIcon open={showConfirm} />
+          </button>
+        }
+      />
+
+      <button
+        onClick={handleSubmit}
+        disabled={loading}
+        className="w-full py-3.5 bg-[#1a1a1a] hover:bg-[#333333] active:bg-[#000000] rounded
+                   text-white text-[14px] font-medium tracking-wide transition-colors
+                   disabled:opacity-60 disabled:cursor-not-allowed mt-1"
+      >
+        {loading ? "Resetting..." : "Reset Password"}
+      </button>
+
+      <button
+        onClick={openLogin}
+        className="text-center text-[13px] text-gray-400 hover:text-[#1a1a1a]
+                   transition-colors font-light"
+      >
+        ← Back to Login
+      </button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTH MODAL — wraps all forms
 // ─────────────────────────────────────────────────────────────────────────────
 
 const TITLES = {
-  login:  "Login",
-  signup: "Sign up",
-  forgot: "Forgot Password",
+  login:          "Login",
+  signup:         "Sign up",
+  forgot:         "Forgot Password",
+  resetPassword:  "Reset Password",
 };
 
 export default function AuthModal() {
   const { mode, closeAuth } = useAuth();
-  const isOpen = !!mode;
+  const [resetToken, setResetToken] = useState(null);
+  const isOpen = !!mode || !!resetToken;
+
+  // Extract reset token from URL on component mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('reset_token');
+    if (token) {
+      setResetToken(token);
+      // Note: You would need to add openResetPassword method to AuthContext
+      // For now, we'll handle this through the URL directly
+    }
+  }, []);
 
   return (
     <>
       {/* Backdrop — starts BELOW navbar (top: 57px covers nav height)
           Gray tint so modal outline is clearly visible */}
       <div
-        onClick={closeAuth}
+        onClick={() => {
+          closeAuth();
+          setResetToken(null);
+        }}
         className="fixed left-0 right-0 bottom-0 transition-all duration-300"
         style={{
           top:                  "57px",   // header top row + nav row height
@@ -592,10 +759,13 @@ export default function AuthModal() {
           <div className="flex items-center justify-between px-6 pt-6 pb-4 ">
             <div className="w-6" />
             <h2 className="text-[16px] font-semibold text-[#1a1a1a] tracking-wide">
-              {TITLES[mode] || ""}
+              {TITLES[mode] || (resetToken ? "Reset Password" : "")}
             </h2>
             <button
-              onClick={closeAuth}
+              onClick={() => {
+                closeAuth();
+                setResetToken(null);
+              }}
               className="text-gray-400 hover:text-[#1a1a1a] transition-colors
                          hover:bg-gray-100 p-1 rounded"
               aria-label="Close"
@@ -609,6 +779,9 @@ export default function AuthModal() {
             {mode === "login"  && <LoginForm />}
             {mode === "signup" && <SignupForm />}
             {mode === "forgot" && <ForgotForm />}
+            {mode === "resetPassword" && resetToken && <ResetPasswordForm token={resetToken} />}
+            {/* Auto-open reset form if token is in URL */}
+            {!mode && resetToken && <ResetPasswordForm token={resetToken} />}
           </div>
         </div>
       </div>

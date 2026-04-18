@@ -219,6 +219,7 @@ export default function CheckoutPage() {
   const [showAddAddress,    setShowAddAddress]    = useState(false)
   const [loadingAddresses,  setLoadingAddresses]  = useState(true)
   const [addressError,      setAddressError]      = useState(null)
+  const [validationError,   setValidationError]   = useState(null)
 
   // Payment: 'cod' | 'card'
   const [paymentMethod,    setPaymentMethod]    = useState('cod')
@@ -296,6 +297,15 @@ export default function CheckoutPage() {
   }
 
   const handlePlaceOrder = async () => {
+    // Clear previous validation error
+    setValidationError(null)
+
+    // Validate that an address is selected
+    if (!selectedAddress || !selectedAddressId) {
+      setValidationError('Please select a delivery address to proceed')
+      return
+    }
+
     try {
       // Update cart status to 2 (checked out/completed) in backend
       const response = await updateCartStatus(2)
@@ -604,11 +614,20 @@ export default function CheckoutPage() {
                   </p>
                 </div>
 
+                {/* Address validation error */}
+                {validationError && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-sm mb-4 mt-4">
+                    <p className="text-[12px] text-red-600 font-light">{validationError}</p>
+                  </div>
+                )}
+
                 {/* Place Order button */}
                 <button
                   onClick={handlePlaceOrder}
+                  disabled={!selectedAddressId}
                   className="w-full mt-5 py-4 bg-[#1a1a1a] hover:bg-gray-800 active:bg-gray-700
-                             text-white text-[14px] font-medium tracking-wide transition-colors">
+                             text-white text-[14px] font-medium tracking-wide transition-colors
+                             disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#1a1a1a]">
                   Place Order — Rs.{orderTotal.toFixed(2)}
                 </button>
 
