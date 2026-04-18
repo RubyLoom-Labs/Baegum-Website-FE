@@ -455,7 +455,7 @@ function ForgotForm() {
     setLoading(true);
     try {
       const response = await requestPasswordReset(email);
-      
+
       // Validate response
       if (response && (response.message || response.data)) {
         setLoading(false);
@@ -579,7 +579,7 @@ function ResetPasswordForm({ token }) {
     setLoading(true);
     try {
       const response = await resetPasswordWithToken(token, password);
-      
+
       if (response && (response.message || response.data)) {
         setLoading(false);
         setSuccess(true);
