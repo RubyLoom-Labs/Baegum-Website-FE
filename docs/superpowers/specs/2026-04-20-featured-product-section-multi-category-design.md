@@ -1,4 +1,4 @@
-# FeaturedProductSection — Multi-Category Scroll with Crossfading Backgrounds
+# FeaturedProductSection — Multi-Category with Scroll-Driven Background
 
 **Date:** 2026-04-20  
 **File:** `src/pages/Home/sections/FeaturedProductSection.jsx`
@@ -7,167 +7,124 @@
 
 ## Overview
 
-Extend the existing `FeaturedProductSection` to display 5 product categories (Clothing, Makeup, Fragrance, Bath & Body, Skincare), each with its own background image. On desktop, categories are stacked vertically and the background crossfades as the user scrolls. On mobile, categories are a horizontal swipe carousel with the background image crossfading at the top as the user swipes.
+Update the existing `FeaturedProductSection` to show 5 categories inside the single existing scroll container (right white card). As the user scrolls through the product rows, the background image on the left (desktop) / above (mobile) crossfades to match the active category. Section height, layout, and structure stay exactly as they are today.
 
 ---
 
-## Data Structure
+## Product Data
 
-Replace the single `PRODUCTS` array with a `CATEGORIES` array:
+Replace the single `PRODUCTS` array with a `CATEGORIES` array. Each category has 2 products and a background image:
 
 ```js
 const CATEGORIES = [
-  {
-    id: "clothing",
-    title: "Timeless Modal",
-    bgImage: timelessModalBg,       // timeless-modal-bg.png (existing)
-    href: "/clothing",
-    products: [ /* 6 clothing products */ ],
-  },
-  {
-    id: "makeup",
-    title: "Makeup",
-    bgImage: bg1,                   // timeless-modal-bg-1.png
-    href: "/makeup",
-    products: [ /* 6 makeup products */ ],
-  },
-  {
-    id: "fragrance",
-    title: "Fragrance",
-    bgImage: bg2,                   // timeless-modal-bg-2.png
-    href: "/fragrance",
-    products: [ /* 6 fragrance products */ ],
-  },
-  {
-    id: "bath-body",
-    title: "Bath & Body",
-    bgImage: bg3,                   // timeless-modal-bg-3.png
-    href: "/bath-body",
-    products: [ /* 6 bath-body products */ ],
-  },
-  {
-    id: "skincare",
-    title: "Skincare",
-    bgImage: bg4,                   // timeless-modal-bg-4.png
-    href: "/skincare",
-    products: [ /* 6 skincare products */ ],
-  },
+  { id: "clothing",  bg: bg1, variant: "clothing", href: "/clothing",  products: [/*2*/] },
+  { id: "makeup",    bg: bg2, variant: "product",  href: "/makeup",    products: [/*2*/] },
+  { id: "fragrance", bg: bg3, variant: "product",  href: "/fragrance", products: [/*2*/] },
+  { id: "bath-body", bg: bg4, variant: "product",  href: "/bath-body", products: [/*2*/] },
+  { id: "skincare",  bg: bg4, variant: "product",  href: "/skincare",  products: [/*2*/] },
 ];
 ```
 
-Each product object keeps the same shape: `{ id, image, name, description, price, href }`.
+Products are flat-mapped into a single list for rendering. Total: 10 cards in the grid.
+
+**Asset mapping:**
+
+| Category    | Background image                              | Product image                              |
+|-------------|-----------------------------------------------|--------------------------------------------|
+| Clothing    | `timeless-modal-bg-1.png`                     | `products/clothing/p1.png`                 |
+| Makeup      | `timeless-modal-bg-2.png`                     | `products/makeup/p1.png`                   |
+| Fragrance   | `timeless-modal-bg-3.png`                     | `products/fragrance/p1.png`                |
+| Bath & Body | `timeless-modal-bg-4.png`                     | `products/bath-body/p1.png`                |
+| Skincare    | `timeless-modal-bg-4.png` (fallback, no bg-5) | `products/skincare/p1.png`                 |
 
 ---
 
-## Desktop Layout
+## Desktop Layout (unchanged structure)
 
-### Approach: Sticky background layer + scrolling content layer
+Section stays `height: 90vh`. Background image and white card layout are identical to today.
 
-**Outer wrapper**
-- `position: relative`
-- Total height: `5 × 90vh = 450vh`
+**Background layer:**
+Two absolutely-positioned `<div>`s stacked at `z-index: 0` behind the content. Active image: `opacity: 1`. Previous: `opacity: 0`. Transition: `opacity 600ms ease`.
 
-**Layer 1 — Sticky background** (renders first, sits behind)
-- `position: sticky; top: 0; height: 100vh; z-index: 0`
-- Contains 5 `<div>` elements, each `position: absolute; inset: 0; background-image: url(...); background-size: cover; background-position: center`
-- Active category: `opacity: 1`, all others: `opacity: 0`
-- Transition: `opacity 0.8s ease` on all
+```
+<section style="position: relative">
+  <div class="bg-layer" style="opacity: 1; backgroundImage: url(activeBg)" />
+  <div class="bg-layer" style="opacity: 0; backgroundImage: url(prevBg)" />
+  <div class="content" style="position: relative; z-index: 1">
+    ...left spacer + right white card...
+  </div>
+</section>
+```
 
-**Layer 2 — Scrolling content** (renders on top)
-- `position: relative; z-index: 1; margin-top: -100vh` — negative margin pulls this layer up to overlap the sticky bg
-- 5 category sections stacked vertically, each `height: 90vh; background: transparent`
-- Each section has the same internal layout as today:
-  - Left side: transparent spacer with rotated vertical subtitle text (category description)
-  - Right side: white card box (`width: 48%; margin: 60px 60px 60px 0`)
-    - Category title at the top of the card (`h2`, light font)
-    - Scrollable 2-column `ProductCard` grid below (`variant="clothing"` for clothing, `variant="product"` for others)
+**Right white card scroll container (unchanged):**
+Same `overflow-y-auto` 2-col grid. 10 `ProductCard`s flow naturally. No dividers, no headers between categories.
 
-**IntersectionObserver** (in `useEffect`)
-- Observes each of the 5 section `<div>` refs
-- `threshold: 0.5` — fires when section is ≥50% visible
-- On intersection: `setActiveIndex(i)` → drives background opacity
+The **first card of each category** receives a `ref` from `categoryRefs` array — used as the IntersectionObserver target.
 
 ---
 
-## Mobile Layout
+## Scroll Detection (Desktop)
 
-### Approach: Fixed-height background + horizontal scroll-snap carousel
+```js
+const [activeBg, setActiveBg] = useState(bg1);
+const [prevBg, setPrevBg]     = useState(bg1);
+const scrollContainerRef      = useRef(null);  // the overflow-y-auto div
+const categoryRefs            = useRef([]);     // 5 refs, one per category first card
+```
 
-**Background image area**
-- `height: 260px; position: relative; overflow: hidden`
-- Contains 5 absolutely-positioned background divs, same crossfade technique as desktop
-- `activeIndex` drives which image is visible
+One `IntersectionObserver` in `useEffect`:
+- `root`: `scrollContainerRef.current` (the scroll container, not the page viewport)
+- `threshold: 0.5`
+- On entry: find lowest index of all currently intersecting entries → call `setActiveBg`
 
-**Dot indicators**
-- Row of 5 small dots directly below the background image area
-- Active dot: filled (`bg-[#1a1a1a]`), inactive: outlined (`border border-gray-300`)
-- `width: 6px; height: 6px; border-radius: 50%`
+```js
+useEffect(() => {
+  const observer = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter(e => e.isIntersecting)
+      .map(e => Number(e.target.dataset.categoryIndex))
+      .sort((a, b) => a - b);
+    if (visible.length) {
+      const idx = visible[0];
+      setPrevBg(activeBg);
+      setActiveBg(CATEGORIES[idx].bg);
+    }
+  }, { root: scrollContainerRef.current, threshold: 0.5 });
 
-**Horizontal carousel**
-- `display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none`
-- 5 slides side by side, each `width: 100vw; flex-shrink: 0; scroll-snap-align: start`
-- Each slide contains:
-  - Category title (`px-4 pt-5 pb-3; text-[19px] font-light`)
-  - Horizontal scrollable product cards (`overflow-x: auto; pb-5 px-4; gap-3`), each card `width: 155px; flex-shrink: 0`
-  - "View All" pill at the end of cards (arrow icon + "View All" label, links to `category.href`)
+  categoryRefs.current.forEach(el => el && observer.observe(el));
+  return () => observer.disconnect();
+}, []);
+```
 
-**IntersectionObserver** (same `useEffect`, reuses slide refs)
-- Observes each slide with `threshold: 0.5`
-- On intersection: `setActiveIndex(i)` → updates background + dots
+Each first-card wrapper gets `ref={el => categoryRefs.current[i] = el}` and `data-category-index={i}`.
+
+---
+
+## Mobile Layout (unchanged structure)
+
+Background image stays above the horizontal scroll row, same `height: 260px`. Same crossfade technique (two stacked divs, `opacity` transition).
+
+The horizontal scroll container (`overflow-x: auto`) becomes the IntersectionObserver `root`. The first card of each category is observed. When it enters the horizontal viewport, `setActiveBg` fires.
+
+No dot indicators or scroll-snap — mobile stays free-scrolling exactly as today.
 
 ---
 
 ## State
 
 ```js
-const [activeIndex, setActiveIndex] = useState(0);
-const desktopRefs = useRef([]);   // refs for the 5 desktop category sections
-const mobileRefs  = useRef([]);   // refs for the 5 mobile carousel slides
-const carouselRef = useRef(null); // ref for the mobile scroll container (IntersectionObserver root)
+const [activeBg, setActiveBg] = useState(CATEGORIES[0].bg);
+const [prevBg, setPrevBg]     = useState(CATEGORIES[0].bg);
 ```
 
-Two separate `IntersectionObserver` instances in `useEffect`:
-- **Desktop observer** — observes `desktopRefs`, default root (viewport), `threshold: 0.5`
-- **Mobile observer** — observes `mobileRefs`, `root: carouselRef.current`, `threshold: 0.5`
-
-Both call `setActiveIndex(i)` on intersection, so the same state drives both backgrounds.
-
----
-
-## Component Structure
-
-```
-FeaturedProductSection
-├── <section> (outer, overflow-hidden, maxWidth 1920px)
-│   │
-│   ├── Desktop wrapper (hidden md:block → relative, height 450vh)
-│   │   ├── StickyBackground (sticky, 5 bg divs, opacity-driven)
-│   │   └── ContentLayer (absolute, 5 × CategorySection)
-│   │       └── CategorySection (90vh, transparent bg, left spacer + right card)
-│   │
-│   └── Mobile wrapper (md:hidden → flex flex-col)
-│       ├── BackgroundArea (260px, 5 bg divs, opacity-driven)
-│       ├── DotIndicators (row of 5 dots)
-│       └── Carousel (flex, overflow-x scroll-snap, 5 slides)
-│           └── CategorySlide (100vw, title + cards + view-all)
-```
-
----
-
-## Assets
-
-| Category   | Background image                          | Product image (placeholder)               |
-|------------|-------------------------------------------|-------------------------------------------|
-| Clothing   | `src/assets/sections/timeless-modal-bg.png`   | `src/assets/products/clothing/p1.png`     |
-| Makeup     | `src/assets/sections/timeless-modal-bg-1.png` | `src/assets/products/makeup/p1.png`       |
-| Fragrance  | `src/assets/sections/timeless-modal-bg-2.png` | `src/assets/products/fragrance/p1.png`    |
-| Bath & Body| `src/assets/sections/timeless-modal-bg-3.png` | `src/assets/products/bath-body/p1.png`    |
-| Skincare   | `src/assets/sections/timeless-modal-bg-4.png` | `src/assets/products/skincare/p1.png`     |
+One shared state drives both desktop and mobile backgrounds. Two separate observers (one per layout, each with its own `root`).
 
 ---
 
 ## Out of Scope
 
-- Fetching real product data from an API (placeholder data only)
-- Animated dot transition beyond opacity
-- Keyboard navigation for the carousel
+- Real product data from API (placeholder data only)
+- Category labels / dividers in the scroll area
+- Dot indicators
+- Keyboard navigation
+- `timeless-modal-bg-5.png` (not yet available — Skincare uses bg-4 until added)
