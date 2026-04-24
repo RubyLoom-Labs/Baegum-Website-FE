@@ -110,7 +110,7 @@ function Logo({ height = 24, className = "", onClick }) {
 
 function MobileTopBar({ leftSlot, rightSlot, headerShadow, onLogoClick }) {
   return (
-    <div className={`flex items-center justify-between px-4 py-8 h-14 bg-white ${headerShadow}`}>
+    <div className={`flex items-center justify-between px-4 h-16 bg-white ${headerShadow}`}>
       {/* Left slot — fixed width so logo always centres */}
       <div className="flex items-center gap-3 w-16">
         {leftSlot}
@@ -257,7 +257,7 @@ export default function Header() {
             <>
               <IconButton
                 defaultSrc={menuDefault} hoverSrc={menuHover}
-                size={22} ariaLabel="Open menu"
+                size={18} ariaLabel="Open menu"
                 onClick={() => { setSearchOpen(false); setMenuOpen(true); }}
               />
               <IconButton
